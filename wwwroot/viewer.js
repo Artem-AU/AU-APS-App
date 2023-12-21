@@ -41,12 +41,12 @@ export function initViewer(container) {
             viewer.start();
             viewer.setTheme('dark-theme');
 
-            viewer.addEventListener(Autodesk.Viewing.MODEL_ROOT_LOADED_EVENT, function() {
-                const explodeExtension = viewer.getExtension('Autodesk.Explode');
-                if (explodeExtension) {
-                    explodeExtension.setStrategy('hierarchy');
-                }
-            });
+            // viewer.addEventListener(Autodesk.Viewing.MODEL_ROOT_LOADED_EVENT, function() {
+            //     const explodeExtension = viewer.getExtension('Autodesk.Explode');
+            //     if (explodeExtension) {
+            //         explodeExtension.setStrategy('hierarchy');
+            //     }
+            // });
             resolve(viewer);
         });
     });

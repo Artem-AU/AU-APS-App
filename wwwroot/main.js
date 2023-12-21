@@ -1,9 +1,29 @@
 import { initViewer, loadModel } from './viewer.js';
 
 initViewer(document.getElementById('preview')).then(viewer => {
+
+    // Get the registered default profile
+    const defaultProfile = viewer.profileManager.getProfileOrDefault();
+    console.log(defaultProfile);
+
+    // Create and set the custom profile
+    const customProfileSettings = {
+        settings: {
+            selectionMode: 1, //enum value, 0 is default 'First Object' is 1
+            openPropertiesOnSelect: true, //boolean, false is default
+            reverseMouseZoomDir: true, //boolean, false is default
+            wheelSetsPivot: true, //boolean, false is default
+        }
+    };
+    const customProfile = new Autodesk.Viewing.Profile(customProfileSettings);
+    viewer.setProfile(customProfile);
+    const currentProfile = viewer.profileManager.getProfileOrDefault();
+    console.log(customProfile);
+
     const urn = window.location.hash?.substring(1);
     setupModelSelection(viewer, urn);
     setupModelUpload(viewer);
+    console.log(`VIEWER INITIALISED WITH custom profile ${currentProfile}`);
 });
 
 async function setupModelSelection(viewer, selectedUrn) {

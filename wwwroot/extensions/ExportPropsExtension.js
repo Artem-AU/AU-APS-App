@@ -53,24 +53,24 @@ class ExportPropsExtension extends BaseExtension {
 
         // Get the properties of the model
         const props = await this.findPropertyNames(model);
-        console.log("PROPS DEFINED");
+        // console.log("PROPS DEFINED");
 
         // Get the existing dropdown with the properties
         const dropdown = document.getElementById('property-dropdown');
         $(dropdown).select2(); // Initialize Select2 on your dropdown
-        console.log("DROPDOWN FOUND");
+        // console.log("DROPDOWN FOUND");
         props.forEach(prop => {
             const option = document.createElement('option');
             option.value = prop;
             option.text = prop;
             dropdown.appendChild(option);
         });
-        console.log(dropdown);
+        // console.log(dropdown);
 
         $(dropdown).on('change', async () => {
             // Get the currently selected options
             let selectedOptions = $(dropdown).select2('data').map(option => option.text);
-            console.log(selectedOptions);
+            // console.log(selectedOptions);
 
             // If the user cleared the selection, set selectedOptions to all properties
             if (selectedOptions.length === 0) {
@@ -87,7 +87,7 @@ class ExportPropsExtension extends BaseExtension {
 
         // Get the selected options from the dropdown
         const selectedOptions = $(dropdown).select2('data').map(option => option.text);
-        console.log(selectedOptions);
+        // console.log(selectedOptions);
 
         // Call setupDataGridConfig with the properties
         this._panel.setupDataGridConfig(props);
