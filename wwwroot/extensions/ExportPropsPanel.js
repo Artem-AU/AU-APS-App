@@ -1,0 +1,97 @@
+let DATAGRID_CONFIG = {
+    requiredProps: [], // Will be filled dynamically
+    columns: [], // Will be filled dynamically
+    // groupBy: 'category', // Optional column to group by
+    createRow: null, // Will be filled dynamically
+    onRowClick: (row, viewer) => {
+        viewer.isolate([row.dbid]);
+        viewer.fitToView([row.dbid]);
+    }
+};
+
+export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
+    constructor(extension, id, title, options) {
+        super(extension.viewer.container, id, title, options);
+        this.extension = extension;
+        this.container.style.left = (options.x || 0) + 'px';
+        this.container.style.top = (options.y || 0) + 'px';
+        this.container.style.width = (options.width || 800) + 'px';
+        this.container.style.height = (options.height || 600) + 'px';
+        this.container.style.resize = 'both'; // Allow both horizontal and vertical resizing
+        this.container.style.overflow = 'auto'; // Add scrollbars if content overflows
+    }
+
+    // Assuming `props` is the array of properties for a model
+    setupDataGridConfig(props) {
+        // Fill requiredProps with all property names
+        DATAGRID_CONFIG.requiredProps = props;
+
+        // Create a column for each property
+        DATAGRID_CONFIG.columns = props.map(prop => ({ title: prop, field: prop.toLowerCase() }));
+
+        // Create a row for each property
+        // Create a row for each property
+        DATAGRID_CONFIG.createRow = (dbid, name, properties) => {
+            const row = { dbid, name };
+            for (const prop of DATAGRID_CONFIG.requiredProps) {
+                const propObj = properties.find(p => p.displayName === prop);
+                if (propObj) {
+                    row[prop.toLowerCase()] = propObj.displayValue;
+                }
+            }
+            return row;
+        };
+    }
+
+
+    
+    initialize() {
+        this.title = this.createTitleBar(this.titleLabel || this.container.id);
+        this.initializeMoveHandlers(this.title);
+        this.container.appendChild(this.title);
+        this.content = document.createElement('div');
+        this.content.style.height = 'calc(100% - 93px)';
+        this.content.style.backgroundColor = 'white';
+        this.content.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 3px;">
+                <span style="color: black; align-self: center; padding: 0 10px;">Filter:</span>
+                <div style="display: flex; justify-content: flex-start; align-items: center; flex-grow: 1;">
+                    <select id="property-dropdown" style="width: 80%; overflow: hidden;" multiple></select>
+                </div>
+                <button id="download-csv" style="background-color: lightgreen; color: black; display: flex; align-items: center; justify-content: center; border-radius: 5px; cursor: pointer; width: 50px; height: 20px;">
+                    <img src="https://cdn3.iconfinder.com/data/icons/internet-relative/200/Download-64.png" alt="Download Icon" style="height: 20px; margin-right: 5px;">
+                    CSV
+                </button>
+            </div>
+            <div class="exportprop-container" style="position: relative; height: 350px;"></div>
+        `;
+        // After appending the content to the container
+        this.container.appendChild(this.content);
+
+        // Initialize Select2 on the #property-dropdown
+        $('#property-dropdown').select2();
+
+        // Add event listener to the button
+        document.getElementById('download-csv').addEventListener('click', () => {
+            this.table.download('csv', 'data.csv');
+        });
+    }
+
+    createTable() {
+        this.table = new Tabulator('.exportprop-container', {
+            height: '100%',
+            layout: 'fitDataFill',
+            columns: DATAGRID_CONFIG.columns,
+            groupBy: DATAGRID_CONFIG.groupBy,
+            rowClick: (e, row) => DATAGRID_CONFIG.onRowClick(row.getData(), this.extension.viewer)
+        });
+    }
+
+    update(model, dbids) {
+        model.getBulkProperties(dbids, { propFilter: DATAGRID_CONFIG.requiredProps }, (results) => {
+            this.table.replaceData(results.map((result) => DATAGRID_CONFIG.createRow(result.dbId, result.name, result.properties)));
+        }, (err) => {
+            console.error(err);
+        });
+    }
+}

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="icon" type="image/x-icon" href="https://cdn1.iconfinder.com/data/icons/unicons-line-vol-5/24/rocket-64.png">
+    <link rel="stylesheet" href="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/style.css">
+    <link rel="stylesheet" href="/main.css">
+    <!-- Add the Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/css/select2.min.css" rel="stylesheet" />
+    <title>AU APS App</title>
+</head>
+
+<body>
+    <div id="header">
+        <img class="logo" src="https://media.cdn.gradconnection.com/uploads/697e2e0d-3530-4608-873f-b579befcdf63-eic-activities.png" alt="Autodesk Platform Services">
+        <span class="title">AU _ Custom Construction Data</span>
+        <select name="models" id="models"></select>
+        <button id="upload" title="Upload New Model">Upload</button>
+        <input style="display: none" type="file" id="input">
+    </div>
+    <div id="preview"></div>
+    <div id="overlay"></div>
+    <script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/viewer3D.js"></script>
+    <!-- Add the Select2 JS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-beta.1/dist/js/select2.min.js"></script>
+    <script src="/main.js" type="module"></script>
+</body>
+
+</html>
