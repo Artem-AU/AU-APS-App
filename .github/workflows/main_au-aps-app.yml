@@ -59,4 +59,4 @@ jobs:
           app-name: 'AU-APS-App'
           slot-name: 'Production'
           package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_175AF012B87F463A8026EA0B3878F8EB }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_90C570C67EEF435BBE156DFDAD0CA18E }}
