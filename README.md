@@ -36,7 +36,7 @@ folder, and run & debug the application directly from the editor.
 
 ## Troubleshooting
 
-Please contact us via https://forge.autodesk.com/en/support/get-help.
+<!-- Please contact us via https://forge.autodesk.com/en/support/get-help. -->
 
 ## License
 
