@@ -17,13 +17,11 @@ initViewer(document.getElementById('preview')).then(viewer => {
     };
     const customProfile = new Autodesk.Viewing.Profile(customProfileSettings);
     viewer.setProfile(customProfile);
-    const currentProfile = viewer.profileManager.getProfileOrDefault();
     console.log(customProfile);
 
     const urn = window.location.hash?.substring(1);
     setupModelSelection(viewer, urn);
     setupModelUpload(viewer);
-    console.log(`VIEWER INITIALISED WITH custom profile ${currentProfile}`);
 });
 
 async function setupModelSelection(viewer, selectedUrn) {

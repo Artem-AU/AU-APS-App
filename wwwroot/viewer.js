@@ -55,6 +55,14 @@ export function initViewer(container) {
 export function loadModel(viewer, urn) {
     return new Promise(function (resolve, reject) {
         function onDocumentLoadSuccess(doc) {
+            const data = doc.getRoot().data;
+            if (data.children && data.children.length > 0) {
+                const fileName = data.children[0].name;
+                const fileExtension = fileName.split('.').pop();
+                console.log('Loaded file extension:', fileExtension);
+            } else {
+                console.log('No file name found in the loaded document');
+            }
             resolve(viewer.loadDocumentNode(doc, doc.getRoot().getDefaultGeometry()));
         }
         function onDocumentLoadFailure(code, message, errors) {
