@@ -9,10 +9,10 @@ initViewer(document.getElementById('preview')).then(viewer => {
     // Create and set the custom profile
     const customProfileSettings = {
         settings: {
-            selectionMode: 1, //enum value, 0 is default 'First Object' is 1
-            openPropertiesOnSelect: true, //boolean, false is default
+            // openPropertiesOnSelect: true, //boolean, false is default
             reverseMouseZoomDir: true, //boolean, false is default
             wheelSetsPivot: true, //boolean, false is default
+            lightPreset: 17, 
         }
     };
     const customProfile = new Autodesk.Viewing.Profile(customProfileSettings);

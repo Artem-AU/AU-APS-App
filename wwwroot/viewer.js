@@ -30,10 +30,10 @@ export function initViewer(container) {
                     'Autodesk.DocumentBrowser',
                     'Autodesk.Explode',
                     'LoggerExtension',
-                    'SummaryExtension',
-                    'HistogramExtension',
-                    'DataGridExtension',
-                    'ReconstructPropsExtension',
+                    // 'SummaryExtension',
+                    // 'HistogramExtension',
+                    // 'DataGridExtension',
+                    // 'ReconstructPropsExtension',
                     'ExportPropsExtension'
                 ]
             };
@@ -41,12 +41,6 @@ export function initViewer(container) {
             viewer.start();
             viewer.setTheme('dark-theme');
 
-            // viewer.addEventListener(Autodesk.Viewing.MODEL_ROOT_LOADED_EVENT, function() {
-            //     const explodeExtension = viewer.getExtension('Autodesk.Explode');
-            //     if (explodeExtension) {
-            //         explodeExtension.setStrategy('hierarchy');
-            //     }
-            // });
             resolve(viewer);
         });
     });
@@ -59,7 +53,12 @@ export function loadModel(viewer, urn) {
             if (data.children && data.children.length > 0) {
                 const fileName = data.children[0].name;
                 const fileExtension = fileName.split('.').pop();
-                console.log('Loaded file extension:', fileExtension);
+
+                if (fileExtension === 'nwc' || fileExtension === 'nwd') {
+                    viewer.setSelectionMode(1);
+                } else {
+                    viewer.setSelectionMode(0);
+                }
             } else {
                 console.log('No file name found in the loaded document');
             }
@@ -68,7 +67,6 @@ export function loadModel(viewer, urn) {
         function onDocumentLoadFailure(code, message, errors) {
             reject({ code, message, errors });
         }
-        viewer.setLightPreset(17);
         Autodesk.Viewing.Document.load('urn:' + urn, onDocumentLoadSuccess, onDocumentLoadFailure);
     });
 }
