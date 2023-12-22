@@ -54,7 +54,7 @@ export function loadModel(viewer, urn) {
                 const fileName = data.children[0].name;
                 const fileExtension = fileName.split('.').pop();
 
-                if (fileExtension === 'nwc' || fileExtension === 'nwd') {
+                if (fileExtension !== 'rvt') {
                     viewer.setSelectionMode(1);
                 } else {
                     viewer.setSelectionMode(0);
