@@ -65,7 +65,8 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
                 for (let i = 0; i < properties.properties.length; i++) {
                     let property = properties.properties[i];
                     if (property.displayName === 'Category' && property.displayValue !== '') {
-                        console.log("FOUND CATEGORY: " + property.displayValue);
+                        // console.log("FOUND CATEGORY: " + property.displayValue);
+                        // console.log(properties.properties);
                         resolve(dbid);
                         return; // return once the first 'Category' property is found
                     }
@@ -117,7 +118,9 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
                     let propNames = new Set();
                     for (const result of results) {
                         for (const prop of result.properties) {
-                            propNames.add(prop.displayName);
+                            if (!prop.displayCategory.startsWith('_')) {
+                                propNames.add(prop.displayCategory + '.' + prop.displayName);
+                            }
                         }
                     }
                     resolve(Array.from(propNames.values()));

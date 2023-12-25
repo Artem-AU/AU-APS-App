@@ -25,21 +25,32 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
     setupDataGridConfig(props) {
         // Fill requiredProps with all property names
         DATAGRID_CONFIG.requiredProps = props;
-        console.log(`---DATAGRID_CONFIG.requiredProps: ${DATAGRID_CONFIG.requiredProps}`);
 
         // Create a column for each property
-        DATAGRID_CONFIG.columns = props.map(prop => ({ title: prop, field: prop.toLowerCase() }));
+        DATAGRID_CONFIG.columns = props
+            .filter((prop, index, self) => {
+                // Remove duplicates
+                return self.indexOf(prop) === index;
+            })
+            .map(prop => {
+                // Replace invalid characters
+                const field = prop.toLowerCase().replace(/[^a-z0-9_]/g, '_');
 
-        // Create a row for each property
+                return { title: prop, field };
+            });
+
         // Create a row for each property
         DATAGRID_CONFIG.createRow = (dbid, name, properties) => {
             const row = { dbid, name };
             for (const prop of DATAGRID_CONFIG.requiredProps) {
-                const propObj = properties.find(p => p.displayName === prop);
+                const [displayCategory, displayName] = prop.split('.');
+                const propObj = properties.find(p => p.displayName === displayName && p.displayCategory === displayCategory);
                 if (propObj) {
-                    row[prop.toLowerCase()] = propObj.displayValue;
+                    const field = prop.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+                    row[field] = propObj.displayValue;
                 }
             }
+            console.log(`---DATAGRID_CONFIG.createRow: ${JSON.stringify(row)}`);
             return row;
         };
     }
@@ -88,10 +99,49 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
         });
     }
 
+    // update(model, dbids) {
+    //     model.getBulkProperties(dbids, { propFilter: DATAGRID_CONFIG.requiredProps }, (results) => {
+    //         console.log(results); // Add this line
+    //         this.table.replaceData(results.map((result) => DATAGRID_CONFIG.createRow(result.dbId, result.name, result.properties)));
+    //     }, (err) => {
+    //         console.error(err);
+    //     });
+    // }
+
     update(model, dbids) {
-        model.getBulkProperties(dbids, { propFilter: DATAGRID_CONFIG.requiredProps }, (results) => {
-            this.table.replaceData(results.map((result) => DATAGRID_CONFIG.createRow(result.dbId, result.name, result.properties)));
-        }, (err) => {
+        const promises = dbids.map(dbId => new Promise((resolve, reject) => {
+            model.getProperties(dbId, result => {
+                // Filter properties based on DATAGRID_CONFIG.requiredProps
+                const filteredProps = result.properties.filter(prop => 
+                    DATAGRID_CONFIG.requiredProps.includes(`${prop.displayCategory}.${prop.displayName}`));
+                
+                // Log the filteredProps
+                // console.log('filteredProps:', filteredProps);
+
+                const resolvedObject = {
+                    dbId: result.dbId,
+                    name: result.name,
+                    properties: filteredProps
+                };
+
+                // Log the object that's being resolved
+                // console.log('resolvedObject:', resolvedObject);
+
+                resolve(resolvedObject);
+            }, reject);
+        }));
+
+        Promise.all(promises).then(results => {
+            // Log the results
+            // console.log('results:', results);
+
+            this.table.replaceData(results.map(result => {
+                // Log the row data
+                const rowData = DATAGRID_CONFIG.createRow(result.dbId, result.name, result.properties);
+                // console.log('rowData:', rowData);
+                return rowData;
+            }));
+        }).catch(err => {
             console.error(err);
         });
     }
