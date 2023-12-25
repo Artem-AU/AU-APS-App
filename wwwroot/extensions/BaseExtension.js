@@ -27,37 +27,76 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
 
     onIsolationChanged(model, dbids) {}
 
-    findLeafNodes(model) {
+    // findLeafNodes(model) {
+    //     return new Promise(function (resolve, reject) {
+    //         model.getObjectTree(function (tree) {
+    //             let leaves = [];
+    //             tree.enumNodeChildren(tree.getRootId(), function (dbid) {
+    //                 if (tree.getChildCount(dbid) === 0) {
+    //                     leaves.push(dbid);
+    //                 }
+    //             }, true /* recursively enumerate children's children as well */);
+    //             resolve(leaves);
+    //             console.log("---LEAF NODES LENGTH: " + leaves.length);
+    //         }, reject);
+    //     });
+    // }
+
+    // findTargetNodes(model) {
+    //     const self = this;
+    //     return new Promise(function (resolve, reject) {
+    //         model.getObjectTree(function (tree) {
+    //             let promises = [];
+    //             tree.enumNodeChildren(tree.getRootId(), function (dbid) {
+    //                 if (tree.getChildCount(dbid) === 0) {
+    //                     promises.push(self.checkNodeAndParents(model, tree, dbid));
+    //                 }
+    //             }, true /* recursively enumerate children's children as well */);
+    //             Promise.all(promises).then(dbids => {
+    //                 resolve(dbids.filter(dbid => dbid !== null)); // filter out null values
+    //             }).catch(reject);
+    //         }, reject);
+    //     });
+    // }
+
+    findNodes(model) {
+        const self = this;
         return new Promise(function (resolve, reject) {
-            model.getObjectTree(function (tree) {
-                let leaves = [];
-                tree.enumNodeChildren(tree.getRootId(), function (dbid) {
-                    if (tree.getChildCount(dbid) === 0) {
-                        leaves.push(dbid);
-                    }
-                }, true /* recursively enumerate children's children as well */);
-                resolve(leaves);
-                console.log("---LEAF NODES LENGTH: " + leaves.length);
+            model.getObjectTree(async function (tree) {
+                const rootNodeId = tree.getRootId();
+                const rootNodeName = tree.getNodeName(rootNodeId);
+                let fileExtension = rootNodeName.split('.')[1];
+                console.log(fileExtension); // Log the file extension to the console
+
+                // Wait for the fileExtension to be set
+                while(fileExtension === null) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                if (fileExtension === "rvt") {
+                    let leaves = [];
+                    tree.enumNodeChildren(tree.getRootId(), function (dbid) {
+                        if (tree.getChildCount(dbid) === 0) {
+                            leaves.push(dbid);
+                        }
+                    }, true /* recursively enumerate children's children as well */);
+                    resolve(leaves);
+                    console.log("---LEAF NODES LENGTH: " + leaves.length);
+                } else {
+                    let promises = [];
+                    tree.enumNodeChildren(tree.getRootId(), function (dbid) {
+                        if (tree.getChildCount(dbid) === 0) {
+                            promises.push(self.checkNodeAndParents(model, tree, dbid));
+                        }
+                    }, true /* recursively enumerate children's children as well */);
+                    Promise.all(promises).then(dbids => {
+                        resolve(dbids.filter(dbid => dbid !== null)); // filter out null values
+                    }).catch(reject);
+                }
             }, reject);
         });
     }
 
-    findTargetNodes(model) {
-        const self = this;
-        return new Promise(function (resolve, reject) {
-            model.getObjectTree(function (tree) {
-                let promises = [];
-                tree.enumNodeChildren(tree.getRootId(), function (dbid) {
-                    if (tree.getChildCount(dbid) === 0) {
-                        promises.push(self.checkNodeAndParents(model, tree, dbid));
-                    }
-                }, true /* recursively enumerate children's children as well */);
-                Promise.all(promises).then(dbids => {
-                    resolve(dbids.filter(dbid => dbid !== null)); // filter out null values
-                }).catch(reject);
-            }, reject);
-        });
-    }
 
     checkNodeAndParents(model, tree, dbid) {
         return new Promise((resolve, reject) => {
@@ -87,28 +126,30 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
 
 
     async findPropertyNames(model) {
-        let fileExtension = null;
+        // let fileExtension = null;
 
-        // Get the root node
-        model.getObjectTree(function (tree) {
-            const rootNodeId = tree.getRootId();
-            const rootNodeName = tree.getNodeName(rootNodeId);
-            fileExtension = rootNodeName.split('.')[1];
-            console.log(fileExtension); // Log the file extension to the console
-        });
+        // // Get the root node
+        // model.getObjectTree(function (tree) {
+        //     const rootNodeId = tree.getRootId();
+        //     const rootNodeName = tree.getNodeName(rootNodeId);
+        //     fileExtension = rootNodeName.split('.')[1];
+        //     console.log(fileExtension); // Log the file extension to the console
+        // });
 
-        // Wait for the fileExtension to be set
-        while(fileExtension === null) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
+        // // Wait for the fileExtension to be set
+        // while(fileExtension === null) {
+        //     await new Promise(resolve => setTimeout(resolve, 100));
+        // }
 
-        let dbids;
-        if (fileExtension === "rvt") {
-            dbids = await this.findLeafNodes(model);
-        } else {
-            console.log("findTargetNodes")
-            dbids = await this.findTargetNodes(model);
-        }
+        // let dbids;
+        // if (fileExtension === "rvt") {
+        //     dbids = await this.findLeafNodes(model);
+        // } else {
+        //     console.log("findTargetNodes")
+        //     dbids = await this.findTargetNodes(model);
+        // }
+
+        let dbids = await this.findNodes(model);
 
         return new Promise(function (resolve, reject) {
             if (dbids.length === 0) {

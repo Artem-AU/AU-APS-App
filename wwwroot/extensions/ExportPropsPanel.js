@@ -50,7 +50,7 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
                     row[field] = propObj.displayValue;
                 }
             }
-            console.log(`---DATAGRID_CONFIG.createRow: ${JSON.stringify(row)}`);
+            // console.log(`---DATAGRID_CONFIG.createRow: ${JSON.stringify(row)}`);
             return row;
         };
     }
