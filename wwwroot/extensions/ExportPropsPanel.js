@@ -25,6 +25,7 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
     setupDataGridConfig(props) {
         // Fill requiredProps with all property names
         DATAGRID_CONFIG.requiredProps = props;
+        console.log(`---DATAGRID_CONFIG.requiredProps: ${DATAGRID_CONFIG.requiredProps}`);
 
         // Create a column for each property
         DATAGRID_CONFIG.columns = props.map(prop => ({ title: prop, field: prop.toLowerCase() }));

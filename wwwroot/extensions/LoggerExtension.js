@@ -17,9 +17,9 @@ class LoggerExtension extends BaseExtension {
         super.onModelLoaded(model);
         const props = await this.findPropertyNames(this.viewer.model);
         console.log('New model has been loaded. Its objects contain the following properties:', props);
-        
-        // const pairs = await this.findParentChildPairs(this.viewer.model);
-        // console.log('Parent-child pairs:', pairs);
+
+        const leafNodes = await this.findLeafNodes(this.viewer.model);
+        console.log('Leaf nodes with Category property:', leafNodes);
     }
 
     async onSelectionChanged(model, dbids) {

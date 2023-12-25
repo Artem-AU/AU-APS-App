@@ -31,78 +31,98 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
         return new Promise(function (resolve, reject) {
             model.getObjectTree(function (tree) {
                 let leaves = [];
-
-                function checkParent(nodeId) {
-                    const parentNodeId = tree.getNodeParentId(nodeId);
-                    if (parentNodeId === null) {
-                        return nodeId;
-                    }
-                    const parentName = tree.getNodeName(parentNodeId);
-                    if (parentName === 'Body' || parentName === 'Axis') {
-                        return checkParent(parentNodeId);
-                    } else {
-                        return parentNodeId;
-                    }
-                }
-
                 tree.enumNodeChildren(tree.getRootId(), function (dbid) {
-                    const nodeName = tree.getNodeName(dbid);
-                    if (nodeName === 'Body' || nodeName === 'Axis') {
-                        const nodeIdToPush = checkParent(dbid);
-                        leaves.push(nodeIdToPush);
-                    } else {
+                    if (tree.getChildCount(dbid) === 0) {
                         leaves.push(dbid);
                     }
                 }, true /* recursively enumerate children's children as well */);
-
                 resolve(leaves);
-                // log the length of the array of leaf nodes
-                console.log("LEAF NODES LENGTH: " + leaves.length);
+                console.log("---LEAF NODES LENGTH: " + leaves.length);
             }, reject);
         });
     }
-    // findFirstObject(viewer, x, y) {
-    //     return new Promise(function (resolve, reject) {
-    //         const hitTestResult = viewer.impl.hitTest(x, y, true);
-    //         if (hitTestResult) {
-    //             resolve(hitTestResult.dbId);
-    //             console.log("HIT TEST RESULT: " + hitTestResult);
-    //         } else {
-    //             reject('No object found at the clicked pixel');
-    //         }
-    //     });
-    // }
 
-    // findParentChildPairs(model) {
-    //     return new Promise(function (resolve, reject) {
-    //         model.getObjectTree(function (tree) {
-    //             let pairs = [];
-    //             tree.enumNodeChildren(tree.getRootId(), function (dbid) {
-    //                 if (tree.getChildCount(dbid) === 0) {
-    //                     const parentId = tree.getNodeParentId(dbid);
-    //                     pairs.push({ parent: parentId, child: dbid });
-    //                 }
-    //             }, true);
-    //             resolve(pairs);
-    //             console.log("PARENT-CHILD PAIRS LENGTH: " + pairs.length);
-    //         }, reject);
-    //     });
-    // }
-
-    async findPropertyNames(model) {
-        const dbids = await this.findLeafNodes(model);
+    findTargetNodes(model) {
+        const self = this;
         return new Promise(function (resolve, reject) {
-            model.getBulkProperties(dbids, {}, function (results) {
-                let propNames = new Set();
-                for (const result of results) {
-                    for (const prop of result.properties) {
-                        propNames.add(prop.displayName);
+            model.getObjectTree(function (tree) {
+                let promises = [];
+                tree.enumNodeChildren(tree.getRootId(), function (dbid) {
+                    if (tree.getChildCount(dbid) === 0) {
+                        promises.push(self.checkNodeAndParents(model, tree, dbid));
+                    }
+                }, true /* recursively enumerate children's children as well */);
+                Promise.all(promises).then(dbids => {
+                    resolve(dbids.filter(dbid => dbid !== null)); // filter out null values
+                }).catch(reject);
+            }, reject);
+        });
+    }
+
+    checkNodeAndParents(model, tree, dbid) {
+        return new Promise((resolve, reject) => {
+            model.getProperties2(dbid, (properties) => { // Use an arrow function here
+                for (let i = 0; i < properties.properties.length; i++) {
+                    let property = properties.properties[i];
+                    if (property.displayName === 'Category' && property.displayValue !== '') {
+                        console.log("FOUND CATEGORY: " + property.displayValue);
+                        resolve(dbid);
+                        return; // return once the first 'Category' property is found
                     }
                 }
-                resolve(Array.from(propNames.values()));
-                // log the length of the array of property names
-                console.log("PROP NAMES LENGTH: " + propNames.length);
-            }, reject);
+                // If conditions are not met and the node is not one before the root, check the parent
+                if (tree.getNodeParentId(dbid) !== tree.getRootId()) {
+                    resolve(this.checkNodeAndParents(model, tree, tree.getNodeParentId(dbid)));
+                } else {
+                    resolve(null); // resolve with null if no 'Category' property is found
+                }
+            }, function(error) {
+                console.error('Error retrieving properties:', error);
+                reject(error);
+            });
+        });
+    }
+
+
+
+    async findPropertyNames(model) {
+        let fileExtension = null;
+
+        // Get the root node
+        model.getObjectTree(function (tree) {
+            const rootNodeId = tree.getRootId();
+            const rootNodeName = tree.getNodeName(rootNodeId);
+            fileExtension = rootNodeName.split('.')[1];
+            console.log(fileExtension); // Log the file extension to the console
+        });
+
+        // Wait for the fileExtension to be set
+        while(fileExtension === null) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        let dbids;
+        if (fileExtension === "rvt") {
+            dbids = await this.findLeafNodes(model);
+        } else {
+            console.log("findTargetNodes")
+            dbids = await this.findTargetNodes(model);
+        }
+
+        return new Promise(function (resolve, reject) {
+            if (dbids.length === 0) {
+                resolve([]);
+            } else {
+                model.getBulkProperties(dbids, {}, function (results) {
+                    let propNames = new Set();
+                    for (const result of results) {
+                        for (const prop of result.properties) {
+                            propNames.add(prop.displayName);
+                        }
+                    }
+                    resolve(Array.from(propNames.values()));
+                }, reject);
+            }
         });
     }
 

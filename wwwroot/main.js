@@ -4,7 +4,7 @@ initViewer(document.getElementById('preview')).then(viewer => {
 
     // Get the registered default profile
     const defaultProfile = viewer.profileManager.getProfileOrDefault();
-    console.log(defaultProfile);
+    // console.log(defaultProfile);
 
     // Create and set the custom profile
     const customProfileSettings = {
@@ -17,7 +17,7 @@ initViewer(document.getElementById('preview')).then(viewer => {
     };
     const customProfile = new Autodesk.Viewing.Profile(customProfileSettings);
     viewer.setProfile(customProfile);
-    console.log(customProfile);
+    // console.log(customProfile);
 
     const urn = window.location.hash?.substring(1);
     setupModelSelection(viewer, urn);
