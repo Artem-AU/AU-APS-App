@@ -19,8 +19,8 @@ class LoggerExtension extends BaseExtension {
         const props = await this.findPropertyNames(this.viewer.model);
         console.log('New model has been loaded. Its objects contain the following properties:', props);
 
-        // const targetNodes = await this.findNodes(this.viewer.model);
-        // // console.log('---TARGET NODES:', targetNodes);
+        const targetNodes = await this.findNodes(this.viewer.model);
+        console.log('---TARGET NODES:', targetNodes);
 
         // // Log each target node
         // targetNodes.forEach((nodeId, index) => {

@@ -21,6 +21,10 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.container.style.overflow = 'auto'; // Add scrollbars if content overflows
     }
 
+    setFileName(fileName) {
+        this.fileName = fileName;
+    }
+
     setupDataGridConfig(props) {
         // Fill requiredProps with all property names
         DATAGRID_CONFIG.requiredProps = props;
@@ -89,7 +93,7 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
 
         // Add event listener to the button
         document.getElementById('download-csv').addEventListener('click', () => {
-            this.table.download('csv', 'data.csv');
+            this.table.download('csv', `${this.fileName}.csv`);
         });
     }
 

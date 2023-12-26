@@ -47,6 +47,17 @@ class ExportPropsExtension extends BaseExtension {
 
     async onModelLoaded(model) {
         super.onModelLoaded(model);
+
+        // Get the doc object from the model
+        const doc = model.getDocumentNode().getDocument();
+        const data = doc.getRoot().data.children[0];
+        const fileName = data.name;
+        // console.log(fileName);
+
+        // Pass the fileName to the panel
+        this._panel.setFileName(fileName);
+
+        
         if (this._panel && this._panel.isVisible()) {
             this.update();
         }

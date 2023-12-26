@@ -50,20 +50,17 @@ export function loadModel(viewer, urn) {
     return new Promise(function (resolve, reject) {
         function onDocumentLoadSuccess(doc) {
             // console.log('Loaded Forge model:', doc);
-            const data = doc.getRoot().data;
-            if (data.children && data.children.length > 0) {
-                const fileName = data.children[0].name;
-                const fileExtension = fileName.split('.').pop();
+            const data = doc.getRoot().data.children[0];
+            const fileType = data.inputFileType;
+            // console.log('---fileType:', fileType);
 
-                if (fileExtension !== 'rvt') {
-                    viewer.setSelectionMode(1);
-                } else {
-                    // console.log('---file extension:', fileExtension);
-                    viewer.setSelectionMode(0);
-                }
+            if (fileType !== 'rvt') {
+                viewer.setSelectionMode(1);
             } else {
-                console.log('No file name found in the loaded document');
+                // console.log('---file extension:', fileExtension);
+                viewer.setSelectionMode(0);
             }
+
             resolve(viewer.loadDocumentNode(doc, doc.getRoot().getDefaultGeometry()));
         }
         function onDocumentLoadFailure(code, message, errors) {
