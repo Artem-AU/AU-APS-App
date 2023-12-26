@@ -49,6 +49,7 @@ export function initViewer(container) {
 export function loadModel(viewer, urn) {
     return new Promise(function (resolve, reject) {
         function onDocumentLoadSuccess(doc) {
+            // console.log('Loaded Forge model:', doc);
             const data = doc.getRoot().data;
             if (data.children && data.children.length > 0) {
                 const fileName = data.children[0].name;
@@ -57,6 +58,7 @@ export function loadModel(viewer, urn) {
                 if (fileExtension !== 'rvt') {
                     viewer.setSelectionMode(1);
                 } else {
+                    // console.log('---file extension:', fileExtension);
                     viewer.setSelectionMode(0);
                 }
             } else {

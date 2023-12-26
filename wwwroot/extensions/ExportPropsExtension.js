@@ -51,9 +51,12 @@ class ExportPropsExtension extends BaseExtension {
             this.update();
         }
 
+        // Get the doc object from the model
+        // const doc = model.getDocumentNode().getDocument();
+
         // Get the properties of the model
         const props = await this.findPropertyNames(model);
-        console.log(props);
+        // console.log(props);
         // Get the existing dropdown with the properties
         const dropdown = document.getElementById('property-dropdown');
         $(dropdown).select2(); // Initialize Select2 on your dropdown

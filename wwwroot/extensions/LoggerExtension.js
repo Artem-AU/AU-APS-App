@@ -15,6 +15,10 @@ class LoggerExtension extends BaseExtension {
 
     async onModelLoaded(model) {
         super.onModelLoaded(model);
+        
+        // Get the doc object from the model
+        // const doc = model.getDocumentNode().getDocument();
+
         const props = await this.findPropertyNames(this.viewer.model);
         console.log('New model has been loaded. Its objects contain the following properties:', props);
 

@@ -30,19 +30,14 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
 
     findNodes(model) {
         const self = this;
+        const doc = model.getDocumentNode().getDocument();
         return new Promise(function (resolve, reject) {
-            model.getObjectTree(async function (tree) {
-                const rootNodeId = tree.getRootId();
-                const rootNodeName = tree.getNodeName(rootNodeId);
-                let fileExtension = rootNodeName.split('.')[1];
-                // console.log(fileExtension); // Log the file extension to the console
+            model.getObjectTree(function (tree) {
+                const data = doc.getRoot().data.children[0];
+                const fileType = data.inputFileType;
+                // console.log('---file type:', fileType); // Log the file type to the console
 
-                // Wait for the fileExtension to be set
-                while(fileExtension === null) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                }
-
-                if (fileExtension === "rvt") {
+                if (fileType === "rvt") {
                     let leaves = [];
                     tree.enumNodeChildren(tree.getRootId(), function (dbid) {
                         if (tree.getChildCount(dbid) === 0) {
@@ -50,7 +45,6 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
                         }
                     }, true);
                     resolve(leaves);
-                    // console.log("---LEAF NODES LENGTH: " + leaves.length);
                 } else {
                     let promises = [];
                     tree.enumNodeChildren(tree.getRootId(), function (dbid) {
@@ -95,7 +89,6 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
 
 
     async findPropertyNames(model) {
-
         let dbids = await this.findNodes(model);
 
         return new Promise(function (resolve, reject) {
