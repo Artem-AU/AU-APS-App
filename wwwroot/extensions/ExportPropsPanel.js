@@ -21,26 +21,31 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.container.style.overflow = 'auto'; // Add scrollbars if content overflows
     }
 
-    // Assuming `props` is the array of properties for a model
     setupDataGridConfig(props) {
         // Fill requiredProps with all property names
         DATAGRID_CONFIG.requiredProps = props;
 
         // Create a column for each property
-        DATAGRID_CONFIG.columns = props
-            .filter((prop, index, self) => {
-                // Remove duplicates
-                return self.indexOf(prop) === index;
-            })
-            .map(prop => {
-                // Replace invalid characters
-                const field = prop.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+        DATAGRID_CONFIG.columns = [
+            { title: 'Name', field: 'name' }, // Add 'Name' column
+            ...props
+                .filter((prop, index, self) => {
+                    // Remove duplicates
+                    return self.indexOf(prop) === index;
+                })
+                .map(prop => {
+                    // Replace invalid characters
+                    const field = prop.toLowerCase().replace(/[^a-z0-9_]/g, '_');
 
-                return { title: prop, field };
-            });
+                    return { title: prop, field };
+                })
+        ];
 
         // Create a row for each property
         DATAGRID_CONFIG.createRow = (dbid, name, properties) => {
+            // Remove the part of the name in brackets
+            name = name.replace(/\s*\[.*?\]\s*/g, '');
+
             const row = { dbid, name };
             for (const prop of DATAGRID_CONFIG.requiredProps) {
                 const [displayCategory, displayName] = prop.split('.');
@@ -50,10 +55,9 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
                     row[field] = propObj.displayValue;
                 }
             }
-            // console.log(`---DATAGRID_CONFIG.createRow: ${JSON.stringify(row)}`);
             return row;
         };
-    }
+    };
 
 
     

@@ -31,12 +31,11 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
     findNodes(model) {
         const self = this;
         const doc = model.getDocumentNode().getDocument();
+        const data = doc.getRoot().data.children[0];
+        const fileType = data.inputFileType;
+
         return new Promise(function (resolve, reject) {
             model.getObjectTree(function (tree) {
-                const data = doc.getRoot().data.children[0];
-                const fileType = data.inputFileType;
-                // console.log('---file type:', fileType); // Log the file type to the console
-
                 if (fileType === "rvt") {
                     let leaves = [];
                     tree.enumNodeChildren(tree.getRootId(), function (dbid) {
@@ -49,7 +48,7 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
                     let promises = [];
                     tree.enumNodeChildren(tree.getRootId(), function (dbid) {
                         if (tree.getChildCount(dbid) === 0) {
-                            promises.push(self.checkNodeAndParents(model, tree, dbid));
+                            promises.push(self.checkNodeAndParents(model, tree, dbid, fileType));
                         }
                     }, true /* recursively enumerate children's children as well */);
                     Promise.all(promises).then(dbids => {
@@ -61,23 +60,29 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
     }
 
 
-    checkNodeAndParents(model, tree, dbid) {
+    checkNodeAndParents(model, tree, dbid, fileType) {
         return new Promise((resolve, reject) => {
-            model.getProperties2(dbid, (properties) => { // Use an arrow function here
+            model.getProperties2(dbid, (properties) => {
                 for (let i = 0; i < properties.properties.length; i++) {
                     let property = properties.properties[i];
-                    if (property.displayName === 'Category' && property.displayValue !== '') {
-                        // console.log("FOUND CATEGORY: " + property.displayValue);
-                        // console.log(properties.properties);
-                        resolve(dbid);
-                        return; // return once the first 'Category' property is found
+                    if (fileType === "ifc") {
+                        const ifcTypeExcludeList = ['Representation', 'Line', 'Curve',  'Area', 'Boolean', 'Geometry', 'Composite', 'Mapped', 'Site'];
+                        if (property.displayCategory === 'Item' && property.displayName === 'Type' && !ifcTypeExcludeList.some(keyword => property.displayValue.toLowerCase().includes(keyword.toLowerCase()))) {
+                            resolve(dbid);
+                            return;
+                        }
+                    } else {
+                        // current condition
+                        if (property.displayName === 'Category' && property.displayValue !== '') {
+                            resolve(dbid);
+                            return;
+                        }
                     }
                 }
-                // If conditions are not met and the node is not one before the root, check the parent
                 if (tree.getNodeParentId(dbid) !== tree.getRootId()) {
-                    resolve(this.checkNodeAndParents(model, tree, tree.getNodeParentId(dbid)));
+                    resolve(this.checkNodeAndParents(model, tree, tree.getNodeParentId(dbid), fileType));
                 } else {
-                    resolve(null); // resolve with null if no 'Category' property is found
+                    resolve(null);
                 }
             }, function(error) {
                 console.error('Error retrieving properties:', error);

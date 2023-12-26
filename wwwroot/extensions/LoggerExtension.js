@@ -16,14 +16,24 @@ class LoggerExtension extends BaseExtension {
     async onModelLoaded(model) {
         super.onModelLoaded(model);
         
-        // Get the doc object from the model
-        // const doc = model.getDocumentNode().getDocument();
-
         const props = await this.findPropertyNames(this.viewer.model);
         console.log('New model has been loaded. Its objects contain the following properties:', props);
 
-        const leafNodes = await this.findNodes(this.viewer.model);
-        console.log('Leaf nodes with Category property:', leafNodes);
+        // const targetNodes = await this.findNodes(this.viewer.model);
+        // // console.log('---TARGET NODES:', targetNodes);
+
+        // // Log each target node
+        // targetNodes.forEach((nodeId, index) => {
+        //     const instanceTree = this.viewer.model.getInstanceTree();
+        //     const nodeName = instanceTree.getNodeName(nodeId);
+            
+        //     const parentId = instanceTree.getNodeParentId(nodeId);
+        //     const parentParentId = instanceTree.getNodeParentId(parentId);
+        //     const parentName = instanceTree.getNodeName(parentParentId);
+
+        //     // console.log(`---TARGET NODE ${index}:`, nodeName);
+        //     console.log(`---PARENT OF TARGET NODE ${index}:`, parentName);
+        // });
     }
 
     async onSelectionChanged(model, dbids) {
