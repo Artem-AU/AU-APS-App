@@ -58,3 +58,21 @@ body, html {
     color: black !important;
 }
 
+#notificationContainer {
+    position: absolute; /* Changed from absolute to fixed */
+    top: 50%; /* Center vertically */
+    left: 50%; /* Center horizontally */
+    transform: translate(-50%, -50%); /* Adjust for the element's own dimensions */
+    width: auto; /* Adjust as per your needs */
+    padding: 10px;
+    box-sizing: border-box;
+    background-color: #f8d7da;
+    color: #721c24;
+    text-align: center;
+    display: none; /* Initially hidden */
+    z-index: 9999;
+}
+
+.notification {
+    display: inline-block;
+}

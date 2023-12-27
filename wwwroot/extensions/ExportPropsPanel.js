@@ -19,6 +19,11 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.container.style.height = (options.height || 600) + 'px';
         this.container.style.resize = 'both'; // Allow both horizontal and vertical resizing
         this.container.style.overflow = 'auto'; // Add scrollbars if content overflows
+
+        // Create a container for the notification
+        this.notificationContainer = document.createElement('div');
+        this.notificationContainer.id = 'notificationContainer';
+        this.container.appendChild(this.notificationContainer);
     }
 
     setFileName(fileName) {
@@ -26,6 +31,7 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
     }
 
     setupDataGridConfig(props) {
+
         // Fill requiredProps with all property names
         DATAGRID_CONFIG.requiredProps = props;
 
@@ -61,7 +67,7 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
             }
             return row;
         };
-    };
+    }
 
 
     
@@ -116,41 +122,51 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
     //     });
     // }
 
+    showNotification(message) {
+        console.log('showNotification called with message:', message);
+        this.notificationContainer.innerHTML = `<div class="notification">${message}</div>`;
+        this.notificationContainer.style.display = 'block'; // Show the notification container
+    }
+
+    clearNotification() {
+        console.log('clearNotification called');
+        this.notificationContainer.innerHTML = '';
+        this.notificationContainer.style.display = 'none'; // Hide the notification container
+    }
+
     update(model, dbids) {
+        // Show notification
+        this.showNotification('Updating data, please wait...');
+
         const promises = dbids.map(dbId => new Promise((resolve, reject) => {
             model.getProperties(dbId, result => {
                 // Filter properties based on DATAGRID_CONFIG.requiredProps
                 const filteredProps = result.properties.filter(prop => 
                     DATAGRID_CONFIG.requiredProps.includes(`${prop.displayCategory}.${prop.displayName}`));
                 
-                // Log the filteredProps
-                // console.log('filteredProps:', filteredProps);
-
                 const resolvedObject = {
                     dbId: result.dbId,
                     name: result.name,
                     properties: filteredProps
                 };
 
-                // Log the object that's being resolved
-                // console.log('resolvedObject:', resolvedObject);
-
                 resolve(resolvedObject);
             }, reject);
         }));
 
         Promise.all(promises).then(results => {
-            // Log the results
-            // console.log('results:', results);
-
             this.table.replaceData(results.map(result => {
-                // Log the row data
                 const rowData = DATAGRID_CONFIG.createRow(result.dbId, result.name, result.properties);
-                // console.log('rowData:', rowData);
                 return rowData;
             }));
+
+            // Clear notification
+            this.clearNotification();
         }).catch(err => {
             console.error(err);
+
+            // Show error notification
+            this.showNotification('An error occurred while updating data.');
         });
     }
 }
