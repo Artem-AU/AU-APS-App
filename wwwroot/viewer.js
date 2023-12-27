@@ -5,6 +5,7 @@ import './extensions/HistogramExtension.js';
 import './extensions/DataGridExtension.js';
 import './extensions/ReconstructPropsExtension.js';
 import './extensions/ExportPropsExtension.js';
+import './extensions/SearchExtension.js';
 
 
 
@@ -34,7 +35,8 @@ export function initViewer(container) {
                     // 'HistogramExtension',
                     // 'DataGridExtension',
                     // 'ReconstructPropsExtension',
-                    'ExportPropsExtension'
+                    'ExportPropsExtension',
+                    'SearchExtension'
                 ]
             };
             const viewer = new Autodesk.Viewing.GuiViewer3D(container, config);
