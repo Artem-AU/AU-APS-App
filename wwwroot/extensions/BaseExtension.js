@@ -4,8 +4,7 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
         this._onObjectTreeCreated = (ev) => this.onModelLoaded(ev.model);
         this._onSelectionChanged = (ev) => this.onSelectionChanged(ev.model, ev.dbIdArray);
         this._onIsolationChanged = (ev) => this.onIsolationChanged(ev.model, ev.nodeIdArray);
-        this.targetNodeCache = new Map();
-        this.propertyNameCache = new Map();
+
     }
 
     load() {
@@ -29,83 +28,80 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
     onIsolationChanged(model, dbids) {}
 
 
-    async findTargetNodes(model) {
+    findNodes(model) {
+        const self = this;
         const doc = model.getDocumentNode().getDocument();
-        const rootChildData = doc.getRoot().data.children[0];
-        const fileName = rootChildData.name;
-        const fileType = rootChildData.inputFileType;
-        const ifcTypeExcludeSet = new Set(['Representation', 'Line', 'Curve',  'Area', 'Boolean', 'Geometry', 'Composite', 'Mapped', 'Site', 'Project']);
+        const data = doc.getRoot().data.children[0];
+        const fileType = data.inputFileType;
 
-        if (this.targetNodeCache.has(fileName)) {
-            return this.targetNodeCache.get(fileName);
-        }
-
-        const result = await new Promise(function (resolve, reject) {
-            model.getObjectTree(async function (tree) {
-                const dbids = [];
-                const leafDbids = [];
-                tree.enumNodeChildren(tree.getRootId(), function (dbid) {
-                    dbids.push(dbid);
-                    if (tree.getChildCount(dbid) === 0) {
-                        leafDbids.push(dbid);
-                    }
-                }, true );
-
+        return new Promise(function (resolve, reject) {
+            model.getObjectTree(function (tree) {
                 if (fileType === "rvt") {
-                    resolve(leafDbids);
-                } else {
-                    const results = await new Promise((resolve, reject) => {
-                        model.getBulkProperties(dbids, {}, resolve, reject);
-                    });
-
-                    let validDbids = [];
-
-                    for (const result of results) {
-                        for (let property of result.properties) {
-                            if (fileType === "ifc") {
-                                if (property.displayCategory === 'Item' && property.displayName === 'Type' && !ifcTypeExcludeSet.has(property.displayValue.toLowerCase())) {
-                                    validDbids.push(result.dbId);
-                                    break;
-                                }
-                            } else {
-                                if (property.displayName === 'Category' && property.displayValue !== '') {
-                                    validDbids.push(result.dbId);
-                                    break;
-                                }
-                            }
+                    let leaves = [];
+                    tree.enumNodeChildren(tree.getRootId(), function (dbid) {
+                        if (tree.getChildCount(dbid) === 0) {
+                            leaves.push(dbid);
                         }
-                    }
-
-                    // Filter out dbids that are parents of any other dbid in validDbids
-                    validDbids = validDbids.filter(dbid => !validDbids.some(otherDbid => tree.getNodeParentId(otherDbid) === dbid));
-
-                    // Return the dbids that passed the check
-                    resolve(validDbids.filter(dbid => dbid !== null)); // filter out null values
+                    }, true);
+                    resolve(leaves);
+                } else {
+                    let promises = [];
+                    tree.enumNodeChildren(tree.getRootId(), function (dbid) {
+                        if (tree.getChildCount(dbid) === 0) {
+                            promises.push(self.checkNodeAndParents(model, tree, dbid, fileType));
+                        }
+                    }, true /* recursively enumerate children's children as well */);
+                    Promise.all(promises).then(dbids => {
+                        resolve(dbids.filter(dbid => dbid !== null)); // filter out null values
+                    }).catch(reject);
                 }
             }, reject);
         });
-
-        this.targetNodeCache.set(fileName, result);
-        return result;
     }
 
+
+    checkNodeAndParents(model, tree, dbid, fileType) {
+        return new Promise((resolve, reject) => {
+            model.getProperties2(dbid, (properties) => {
+                for (let i = 0; i < properties.properties.length; i++) {
+                    let property = properties.properties[i];
+                    if (fileType === "ifc") {
+                        const ifcTypeExcludeList = ['Representation', 'Line', 'Curve',  'Area', 'Boolean', 'Geometry', 'Composite', 'Mapped', 'Site'];
+                        if (property.displayCategory === 'Item' && property.displayName === 'Type' && !ifcTypeExcludeList.some(keyword => property.displayValue.toLowerCase().includes(keyword.toLowerCase()))) {
+                            resolve(dbid);
+                            return;
+                        }
+                    } else {
+                        // current condition
+                        if (property.displayName === 'Category' && property.displayValue !== '') {
+                            resolve(dbid);
+                            return;
+                        }
+                    }
+                }
+                if (tree.getNodeParentId(dbid) !== tree.getRootId()) {
+                    resolve(this.checkNodeAndParents(model, tree, tree.getNodeParentId(dbid), fileType));
+                } else {
+                    resolve(null);
+                }
+            }, function(error) {
+                console.error('Error retrieving properties:', error);
+                reject(error);
+            });
+        });
+    }
+
+
+
     async findPropertyNames(model) {
-        const doc = model.getDocumentNode().getDocument();
-        const rootChildData = doc.getRoot().data.children[0];
-        const fileName = rootChildData.name;
+        let dbids = await this.findNodes(model);
 
-        if (this.propertyNameCache.has(fileName)) {
-            return this.propertyNameCache.get(fileName);
-        }
-
-        const dbids = await this.findTargetNodes(model);
-
-        const result = await new Promise(function (resolve, reject) {
+        return new Promise(function (resolve, reject) {
             if (dbids.length === 0) {
                 resolve([]);
             } else {
-                model.getBulkProperties(dbids, {}, (results) => {
-                    const propNames = new Set();
+                model.getBulkProperties(dbids, {}, function (results) {
+                    let propNames = new Set();
                     for (const result of results) {
                         for (const prop of result.properties) {
                             if (!prop.displayCategory.startsWith('_')) {
@@ -117,12 +113,7 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
                 }, reject);
             }
         });
-
-        this.propertyNameCache.set(fileName, result);
-        return result;
     }
-
-
 
     createToolbarButton(buttonId, buttonIconUrl, buttonTooltip, buttonColor) {
         let group = this.viewer.toolbar.getControl('dashboard-toolbar-group');
