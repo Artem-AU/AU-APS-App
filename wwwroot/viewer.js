@@ -36,7 +36,7 @@ export function initViewer(container) {
                     // 'DataGridExtension',
                     // 'ReconstructPropsExtension',
                     'ExportPropsExtension',
-                    // 'SearchExtension'
+                    'SearchExtension'
                 ]
             };
             const viewer = new Autodesk.Viewing.GuiViewer3D(container, config);
