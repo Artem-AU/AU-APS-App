@@ -110,7 +110,7 @@ class ExportPropsExtension extends BaseExtension {
     }
 
     async update() {
-        const dbids = await this.findNodes(this.viewer.model);
+        const dbids = await this.findTargetNodes(this.viewer.model);
         this._panel.update(this.viewer.model, dbids);
     }
 }

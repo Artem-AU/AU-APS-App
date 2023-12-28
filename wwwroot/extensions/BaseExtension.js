@@ -4,7 +4,7 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
         this._onObjectTreeCreated = (ev) => this.onModelLoaded(ev.model);
         this._onSelectionChanged = (ev) => this.onSelectionChanged(ev.model, ev.dbIdArray);
         this._onIsolationChanged = (ev) => this.onIsolationChanged(ev.model, ev.nodeIdArray);
-        this.nodeCache = new Map();
+        this.targetNodeCache = new Map();
         this.propertyNameCache = new Map();
     }
 
@@ -29,16 +29,16 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
     onIsolationChanged(model, dbids) {}
 
 
-    async findNodes(model) {
-        const modelId = model.getId();
-        if (this.nodeCache.has(modelId)) {
-            return this.nodeCache.get(modelId);
-        }
-
+    async findTargetNodes(model) {
         const doc = model.getDocumentNode().getDocument();
         const rootChildData = doc.getRoot().data.children[0];
+        const fileName = rootChildData.name;
         const fileType = rootChildData.inputFileType;
         const ifcTypeExcludeSet = new Set(['Representation', 'Line', 'Curve',  'Area', 'Boolean', 'Geometry', 'Composite', 'Mapped', 'Site', 'Project']);
+
+        if (this.targetNodeCache.has(fileName)) {
+            return this.targetNodeCache.get(fileName);
+        }
 
         const result = await new Promise(function (resolve, reject) {
             model.getObjectTree(async function (tree) {
@@ -49,20 +49,17 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
                     if (tree.getChildCount(dbid) === 0) {
                         leafDbids.push(dbid);
                     }
-                }, true /* recursively enumerate children's children as well */);
+                }, true );
 
                 if (fileType === "rvt") {
                     resolve(leafDbids);
                 } else {
-                    // Get properties for all dbids
                     const results = await new Promise((resolve, reject) => {
                         model.getBulkProperties(dbids, {}, resolve, reject);
                     });
 
-                    // Array to store dbids that pass the check
                     let validDbids = [];
 
-                    // Process properties
                     for (const result of results) {
                         for (let property of result.properties) {
                             if (fileType === "ifc") {
@@ -71,7 +68,6 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
                                     break;
                                 }
                             } else {
-                                // current condition
                                 if (property.displayName === 'Category' && property.displayValue !== '') {
                                     validDbids.push(result.dbId);
                                     break;
@@ -89,18 +85,20 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
             }, reject);
         });
 
-        this.nodeCache.set(modelId, result);
+        this.targetNodeCache.set(fileName, result);
         return result;
     }
 
-
     async findPropertyNames(model) {
-        const modelId = model.getId();
-        if (this.propertyNameCache.has(modelId)) {
-            return this.propertyNameCache.get(modelId);
+        const doc = model.getDocumentNode().getDocument();
+        const rootChildData = doc.getRoot().data.children[0];
+        const fileName = rootChildData.name;
+
+        if (this.propertyNameCache.has(fileName)) {
+            return this.propertyNameCache.get(fileName);
         }
 
-        const dbids = await this.findNodes(model);
+        const dbids = await this.findTargetNodes(model);
 
         const result = await new Promise(function (resolve, reject) {
             if (dbids.length === 0) {
@@ -120,9 +118,10 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
             }
         });
 
-        this.propertyNameCache.set(modelId, result);
+        this.propertyNameCache.set(fileName, result);
         return result;
     }
+
 
 
     createToolbarButton(buttonId, buttonIconUrl, buttonTooltip, buttonColor) {

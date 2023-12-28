@@ -32,7 +32,7 @@ class LoggerExtension extends BaseExtension {
 
 
 
-        const targetNodes = await this.findNodes(this.viewer.model);
+        const targetNodes = await this.findTargetNodes(this.viewer.model);
         console.log('---TARGET NODES:', targetNodes);
 
         // // Log each target node
