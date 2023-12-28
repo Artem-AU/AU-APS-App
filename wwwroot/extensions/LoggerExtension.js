@@ -19,6 +19,19 @@ class LoggerExtension extends BaseExtension {
         const props = await this.findPropertyNames(this.viewer.model);
         console.log('New model has been loaded. Its objects contain the following properties:', props);
 
+        // const newProps = await this.findPropertyNamesNew(this.viewer.model);
+        // console.log('New model has been loaded. Its objects contain the following NEW properties:', newProps);
+
+        // // Create new array that contains only the parts of the property names after the "."
+        // const propsAfterDot = props.map(prop => prop.split('.')[1]);
+
+        // // Find the properties that are in propsAfterDot but not in newProps
+        // const difference = propsAfterDot.filter(prop => !newProps.includes(prop));
+
+        // console.log('The following properties are in props but not in newProps:', difference);
+
+
+
         const targetNodes = await this.findNodes(this.viewer.model);
         console.log('---TARGET NODES:', targetNodes);
 

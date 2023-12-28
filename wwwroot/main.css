@@ -42,7 +42,7 @@ body, html {
     left: 50%;
     top: 5em; /* adjust this value to control the top offset */ 
     transform: translateX(-50%);
-    z-index: 2;
+    z-index: 1;
 }
 
 #header > * {

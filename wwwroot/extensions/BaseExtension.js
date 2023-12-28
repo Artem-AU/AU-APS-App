@@ -28,80 +28,76 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
     onIsolationChanged(model, dbids) {}
 
 
-    findNodes(model) {
-        const self = this;
+    async findNodes(model) {
+        // const self = this;
         const doc = model.getDocumentNode().getDocument();
-        const data = doc.getRoot().data.children[0];
-        const fileType = data.inputFileType;
+        const rootChildData = doc.getRoot().data.children[0];
+        const fileType = rootChildData.inputFileType;
+        const ifcTypeExcludeSet = new Set(['Representation', 'Line', 'Curve',  'Area', 'Boolean', 'Geometry', 'Composite', 'Mapped', 'Site', 'Project']);
+
 
         return new Promise(function (resolve, reject) {
-            model.getObjectTree(function (tree) {
+            model.getObjectTree(async function (tree) {
+                const dbids = [];
+                const leafDbids = [];
+                tree.enumNodeChildren(tree.getRootId(), function (dbid) {
+                    dbids.push(dbid);
+                    if (tree.getChildCount(dbid) === 0) {
+                        leafDbids.push(dbid);
+                    }
+                }, true /* recursively enumerate children's children as well */);
+
                 if (fileType === "rvt") {
-                    let leaves = [];
-                    tree.enumNodeChildren(tree.getRootId(), function (dbid) {
-                        if (tree.getChildCount(dbid) === 0) {
-                            leaves.push(dbid);
-                        }
-                    }, true);
-                    resolve(leaves);
+                    resolve(leafDbids);
                 } else {
-                    let promises = [];
-                    tree.enumNodeChildren(tree.getRootId(), function (dbid) {
-                        if (tree.getChildCount(dbid) === 0) {
-                            promises.push(self.checkNodeAndParents(model, tree, dbid, fileType));
+                    // Get properties for all dbids
+                    const results = await new Promise((resolve, reject) => {
+                        model.getBulkProperties(dbids, {}, resolve, reject);
+                    });
+
+                    // Array to store dbids that pass the check
+                    let validDbids = [];
+
+                    // Process properties
+                    for (const result of results) {
+                        // const ifcTypeExcludeSet = new Set(['Representation', 'Line', 'Curve',  'Area', 'Boolean', 'Geometry', 'Composite', 'Mapped', 'Site', 'Project']);
+                        for (let property of result.properties) {
+                            if (fileType === "ifc") {
+                                if (property.displayCategory === 'Item' && property.displayName === 'Type' && !ifcTypeExcludeSet.has(property.displayValue.toLowerCase())) {
+                                    validDbids.push(result.dbId);
+                                    break;
+                                }
+                            } else {
+                                // current condition
+                                if (property.displayName === 'Category' && property.displayValue !== '') {
+                                    validDbids.push(result.dbId);
+                                    break;
+                                }
+                            }
                         }
-                    }, true /* recursively enumerate children's children as well */);
-                    Promise.all(promises).then(dbids => {
-                        resolve(dbids.filter(dbid => dbid !== null)); // filter out null values
-                    }).catch(reject);
+                    }
+
+                    // Filter out dbids that are parents of any other dbid in validDbids
+                    validDbids = validDbids.filter(dbid => !validDbids.some(otherDbid => tree.getNodeParentId(otherDbid) === dbid));
+
+                    // Return the dbids that passed the check
+                    resolve(validDbids.filter(dbid => dbid !== null)); // filter out null values
                 }
             }, reject);
         });
     }
 
 
-    checkNodeAndParents(model, tree, dbid, fileType) {
-        return new Promise((resolve, reject) => {
-            model.getProperties2(dbid, (properties) => {
-                for (let i = 0; i < properties.properties.length; i++) {
-                    let property = properties.properties[i];
-                    if (fileType === "ifc") {
-                        const ifcTypeExcludeList = ['Representation', 'Line', 'Curve',  'Area', 'Boolean', 'Geometry', 'Composite', 'Mapped', 'Site'];
-                        if (property.displayCategory === 'Item' && property.displayName === 'Type' && !ifcTypeExcludeList.some(keyword => property.displayValue.toLowerCase().includes(keyword.toLowerCase()))) {
-                            resolve(dbid);
-                            return;
-                        }
-                    } else {
-                        // current condition
-                        if (property.displayName === 'Category' && property.displayValue !== '') {
-                            resolve(dbid);
-                            return;
-                        }
-                    }
-                }
-                if (tree.getNodeParentId(dbid) !== tree.getRootId()) {
-                    resolve(this.checkNodeAndParents(model, tree, tree.getNodeParentId(dbid), fileType));
-                } else {
-                    resolve(null);
-                }
-            }, function(error) {
-                console.error('Error retrieving properties:', error);
-                reject(error);
-            });
-        });
-    }
-
-
 
     async findPropertyNames(model) {
-        let dbids = await this.findNodes(model);
+        const dbids = await this.findNodes(model);
 
         return new Promise(function (resolve, reject) {
             if (dbids.length === 0) {
                 resolve([]);
             } else {
-                model.getBulkProperties(dbids, {}, function (results) {
-                    let propNames = new Set();
+                model.getBulkProperties(dbids, {}, (results) => {
+                    const propNames = new Set();
                     for (const result of results) {
                         for (const prop of result.properties) {
                             if (!prop.displayCategory.startsWith('_')) {
@@ -114,6 +110,7 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
             }
         });
     }
+
 
     createToolbarButton(buttonId, buttonIconUrl, buttonTooltip, buttonColor) {
         let group = this.viewer.toolbar.getControl('dashboard-toolbar-group');
