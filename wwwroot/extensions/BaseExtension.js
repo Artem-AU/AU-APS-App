@@ -27,7 +27,6 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
 
     onIsolationChanged(model, dbids) {}
 
-
     findNodes(model) {
         const self = this;
         const doc = model.getDocumentNode().getDocument();
@@ -50,15 +49,14 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
                         if (tree.getChildCount(dbid) === 0) {
                             promises.push(self.checkNodeAndParents(model, tree, dbid, fileType));
                         }
-                    }, true /* recursively enumerate children's children as well */);
+                    }, true );
                     Promise.all(promises).then(dbids => {
-                        resolve(dbids.filter(dbid => dbid !== null)); // filter out null values
+                        resolve(dbids.filter(dbid => dbid !== null));
                     }).catch(reject);
                 }
             }, reject);
         });
     }
-
 
     checkNodeAndParents(model, tree, dbid, fileType) {
         return new Promise((resolve, reject) => {
@@ -66,13 +64,12 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
                 for (let i = 0; i < properties.properties.length; i++) {
                     let property = properties.properties[i];
                     if (fileType === "ifc") {
-                        const ifcTypeExcludeList = ['Representation', 'Line', 'Curve',  'Area', 'Boolean', 'Geometry', 'Composite', 'Mapped', 'Site'];
+                        const ifcTypeExcludeList = ['Representation', 'Line', 'Curve',  'Area', 'Boolean', 'Geometry', 'Composite', 'Mapped', 'Site', 'Project'];
                         if (property.displayCategory === 'Item' && property.displayName === 'Type' && !ifcTypeExcludeList.some(keyword => property.displayValue.toLowerCase().includes(keyword.toLowerCase()))) {
                             resolve(dbid);
                             return;
                         }
                     } else {
-                        // current condition
                         if (property.displayName === 'Category' && property.displayValue !== '') {
                             resolve(dbid);
                             return;
@@ -90,8 +87,6 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
             });
         });
     }
-
-
 
     async findPropertyNames(model) {
         let dbids = await this.findNodes(model);

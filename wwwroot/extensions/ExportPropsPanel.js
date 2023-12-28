@@ -1,7 +1,6 @@
 let DATAGRID_CONFIG = {
     requiredProps: [], // Will be filled dynamically
     columns: [], // Will be filled dynamically
-    // groupBy: 'category', // Optional column to group by
     createRow: null, // Will be filled dynamically
     onRowClick: (row, viewer) => {
         viewer.isolate([row.dbid]);
@@ -20,7 +19,6 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.container.style.resize = 'both'; // Allow both horizontal and vertical resizing
         this.container.style.overflow = 'auto'; // Add scrollbars if content overflows
 
-        // Create a container for the notification
         this.notificationContainer = document.createElement('div');
         this.notificationContainer.id = 'notificationContainer';
         this.container.appendChild(this.notificationContainer);
@@ -68,8 +66,6 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
             return row;
         };
     }
-
-
     
     initialize() {
         this.title = this.createTitleBar(this.titleLabel || this.container.id);
@@ -112,15 +108,6 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
             rowClick: (e, row) => DATAGRID_CONFIG.onRowClick(row.getData(), this.extension.viewer)
         });
     }
-
-    // update(model, dbids) {
-    //     model.getBulkProperties(dbids, { propFilter: DATAGRID_CONFIG.requiredProps }, (results) => {
-    //         console.log(results); // Add this line
-    //         this.table.replaceData(results.map((result) => DATAGRID_CONFIG.createRow(result.dbId, result.name, result.properties)));
-    //     }, (err) => {
-    //         console.error(err);
-    //     });
-    // }
 
     showNotification(message) {
         console.log('showNotification called with message:', message);

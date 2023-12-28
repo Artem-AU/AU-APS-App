@@ -40,7 +40,7 @@ body, html {
 #searchoverlay {
     position: absolute;
     left: 50%;
-    top: 5em; /* adjust this value to control the top offset */ 
+    top: 4em; /* adjust this value to control the top offset */ 
     transform: translateX(-50%);
     z-index: 1;
 }

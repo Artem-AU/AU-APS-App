@@ -34,7 +34,7 @@ class ExportPropsExtension extends BaseExtension {
     }
 
     onToolbarCreated() {
-        this._panel = new ExportPropsPanel(this, 'dashboard-exportprops-panel', 'Export Properties', { x: 10, y: 10});
+        this._panel = new ExportPropsPanel(this, 'dashboard-exportprops-panel', 'Export Properties', { x: 10, y: 50});
         this._button = this.createToolbarButton('dashboard-exportprops-button', 'https://cdn0.iconfinder.com/data/icons/infographic-element-8/512/26_Diagram-64.png', 'Export Props', "lightgreen");
         this._button.onClick = () => {
             this._panel.setVisible(!this._panel.isVisible());
