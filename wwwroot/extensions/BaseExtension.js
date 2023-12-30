@@ -4,6 +4,7 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
         this._onObjectTreeCreated = (ev) => this.onModelLoaded(ev.model);
         this._onSelectionChanged = (ev) => this.onSelectionChanged(ev.model, ev.dbIdArray);
         this._onIsolationChanged = (ev) => this.onIsolationChanged(ev.model, ev.nodeIdArray);
+        this.ifcTypeExclude = new Set(['Representation', 'Line', 'Curve',  'Area', 'Boolean', 'Geometry', 'Composite', 'Mapped', 'Site', 'Project'].map(v => v.toLowerCase()));
 
     }
 
@@ -27,85 +28,109 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
 
     onIsolationChanged(model, dbids) {}
 
-    findNodes(model) {
-        const self = this;
+    getFileInfo(model, property) {
         const doc = model.getDocumentNode().getDocument();
         const data = doc.getRoot().data.children[0];
-        const fileType = data.inputFileType;
-
-        return new Promise(function (resolve, reject) {
-            model.getObjectTree(function (tree) {
-                if (fileType === "rvt") {
-                    let leaves = [];
-                    tree.enumNodeChildren(tree.getRootId(), function (dbid) {
-                        if (tree.getChildCount(dbid) === 0) {
-                            leaves.push(dbid);
-                        }
-                    }, true);
-                    resolve(leaves);
-                } else {
-                    let promises = [];
-                    tree.enumNodeChildren(tree.getRootId(), function (dbid) {
-                        if (tree.getChildCount(dbid) === 0) {
-                            promises.push(self.checkNodeAndParents(model, tree, dbid, fileType));
-                        }
-                    }, true );
-                    Promise.all(promises).then(dbids => {
-                        resolve(dbids.filter(dbid => dbid !== null));
-                    }).catch(reject);
-                }
-            }, reject);
-        });
+        return data.hasOwnProperty(property) ? data[property] : null;
     }
 
-    checkNodeAndParents(model, tree, dbid, fileType) {
+    getAllDbIds() {
         return new Promise((resolve, reject) => {
-            model.getProperties2(dbid, (properties) => {
-                for (let i = 0; i < properties.properties.length; i++) {
-                    let property = properties.properties[i];
-                    if (fileType === "ifc") {
-                        const ifcTypeExcludeList = ['Representation', 'Line', 'Curve',  'Area', 'Boolean', 'Geometry', 'Composite', 'Mapped', 'Site', 'Project'];
-                        if (property.displayCategory === 'Item' && property.displayName === 'Type' && !ifcTypeExcludeList.some(keyword => property.displayValue.toLowerCase().includes(keyword.toLowerCase()))) {
-                            resolve(dbid);
-                            return;
-                        }
-                    } else {
-                        if (property.displayName === 'Category' && property.displayValue !== '') {
-                            resolve(dbid);
-                            return;
-                        }
-                    }
-                }
-                if (tree.getNodeParentId(dbid) !== tree.getRootId()) {
-                    resolve(this.checkNodeAndParents(model, tree, tree.getNodeParentId(dbid), fileType));
-                } else {
-                    resolve(null);
-                }
-            }, function(error) {
-                console.error('Error retrieving properties:', error);
-                reject(error);
+            this.viewer.model.getObjectTree(tree => {
+                let allDbIds = [];
+                tree.enumNodeChildren(tree.getRootId(), function(dbId) {
+                    allDbIds.push(dbId);
+                }, true);
+                resolve(allDbIds);
+            }, function(err) {
+                console.error("Error querying the Object Tree:", err);
+                reject(err);
             });
         });
     }
 
-    async findPropertyNames(model) {
-        let dbids = await this.findNodes(model);
+    async findIfcNodes(targetNodes = null, options = {}) {
+        console.log('---findIfcNodes');
+        if (targetNodes === null) {
+            targetNodes = await this.getAllDbIds();
+        }
+        return new Promise((resolve, reject) => {            
+            this.viewer.model.getPropertyDb().getPropertySet(targetNodes, options, function(results) {
+                if (results.hasOwnProperty('Item/Type')) {
+                    let dbIds = results['Item/Type'].filter(item => !this.ifcTypeExclude.some(keyword => item.displayValue.toLowerCase().includes(keyword.toLowerCase()))).map(item => item.dbId);
+                    resolve(dbIds);
+                } else {
+                    resolve([]);
+                }
+            }.bind(this), function(err) {
+                console.error("Error querying the Property Set:", err);
+                reject(err);
+            });
+        });
+    }
 
-        return new Promise(function (resolve, reject) {
+    async findNavisNodes(targetNodes = null, options = {}) {
+        console.log('---findNavisNodes');
+        if (targetNodes === null) {
+            targetNodes = await this.getAllDbIds();
+        }    
+        return new Promise((resolve, reject) => {
+            this.viewer.model.getPropertyDb().getPropertySet(targetNodes, options, (results) => {
+                if (results.hasOwnProperty('Element/Category')) {
+                    let dbIds = results['Element/Category'].filter(item => item.displayValue !== '').map(item => item.dbId);
+                    resolve(dbIds);
+                } else {
+                    resolve([]);
+                }
+            }, (err) => {
+                console.error("Error querying the Property Set:", err);
+                reject(err);
+                throw err;
+            });
+        });
+    }
+
+    async findRevitNodes(model) {
+        console.log('---findRevitNodes');
+        return new Promise((resolve, reject) => {
+            model.getObjectTree((tree) => {
+                let leaves = [];
+                tree.enumNodeChildren(tree.getRootId(), (dbid) => {
+                    if (tree.getChildCount(dbid) === 0) {
+                        leaves.push(dbid);
+                    }
+                }, true);
+                resolve(leaves);
+            }, reject);
+        });
+    }
+
+    async findTargetNodes(model) {
+        const fileType = this.getFileInfo(model, "inputFileType");
+
+        switch (fileType) {
+            case 'rvt':
+                return this.findRevitNodes(model);
+            case 'ifc':
+                return this.findIfcNodes();
+            default:
+                return this.findNavisNodes();
+        }
+    }
+
+    async findPropertyNames(model) {
+        const dbids = await this.findTargetNodes(model);
+        return new Promise((resolve, reject) => {
             if (dbids.length === 0) {
                 resolve([]);
             } else {
-                model.getBulkProperties(dbids, {}, function (results) {
-                    let propNames = new Set();
-                    for (const result of results) {
-                        for (const prop of result.properties) {
-                            if (!prop.displayCategory.startsWith('_')) {
-                                propNames.add(prop.displayCategory + '.' + prop.displayName);
-                            }
-                        }
-                    }
-                    resolve(Array.from(propNames.values()));
-                }, reject);
+                model.getPropertyDb().getPropertySet(dbids, {}, (results) => {
+                    const propNames = Object.keys(results).filter(name => !name.startsWith('_'));
+                    resolve(propNames);
+                }, (err) => {
+                    console.error("Error querying the Property Set:", err);
+                    reject(err);
+                });
             }
         });
     }

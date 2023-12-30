@@ -55,8 +55,9 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
             name = name.replace(/\s*\[.*?\]\s*/g, '');
 
             const row = { dbid, name };
+            // console.log('properties:', properties);
             for (const prop of DATAGRID_CONFIG.requiredProps) {
-                const [displayCategory, displayName] = prop.split('.');
+                const [displayCategory, displayName] = prop.split('/');
                 const propObj = properties.find(p => p.displayName === displayName && p.displayCategory === displayCategory);
                 if (propObj) {
                     const field = prop.toLowerCase().replace(/[^a-z0-9_]/g, '_');
@@ -129,21 +130,26 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
             model.getProperties(dbId, result => {
                 // Filter properties based on DATAGRID_CONFIG.requiredProps
                 const filteredProps = result.properties.filter(prop => 
-                    DATAGRID_CONFIG.requiredProps.includes(`${prop.displayCategory}.${prop.displayName}`));
-                
+                    DATAGRID_CONFIG.requiredProps.includes(`${prop.displayCategory}/${prop.displayName}`));
+                // console.log('result.properties:', result.properties);
+                // console.log('DATAGRID_CONFIG.requiredProps:', DATAGRID_CONFIG.requiredProps);
+                // console.log('filteredProps:', filteredProps);
                 const resolvedObject = {
                     dbId: result.dbId,
                     name: result.name,
                     properties: filteredProps
                 };
+                // console.log('resolvedObject:', resolvedObject);
 
                 resolve(resolvedObject);
             }, reject);
         }));
 
         Promise.all(promises).then(results => {
+            // console.log('results:', results);
             this.table.replaceData(results.map(result => {
                 const rowData = DATAGRID_CONFIG.createRow(result.dbId, result.name, result.properties);
+                // console.log('rowData:', rowData);
                 return rowData;
             }));
 
