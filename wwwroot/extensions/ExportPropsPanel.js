@@ -30,7 +30,6 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
 
     setupDataGridConfig(props) {
 
-        // Fill requiredProps with all property names
         DATAGRID_CONFIG.requiredProps = props;
 
         // Create a column for each property
@@ -44,7 +43,6 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
                 .map(prop => {
                     // Replace invalid characters
                     const field = prop.toLowerCase().replace(/[^a-z0-9_]/g, '_');
-
                     return { title: prop, field };
                 })
         ];
@@ -103,7 +101,7 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
     createTable() {
         this.table = new Tabulator('.exportprop-container', {
             height: '100%',
-            layout: 'fitDataFill',
+            layout: 'fitColumns',
             columns: DATAGRID_CONFIG.columns,
             groupBy: DATAGRID_CONFIG.groupBy,
             rowClick: (e, row) => DATAGRID_CONFIG.onRowClick(row.getData(), this.extension.viewer)
@@ -111,13 +109,11 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
     }
 
     showNotification(message) {
-        console.log('showNotification called with message:', message);
         this.notificationContainer.innerHTML = `<div class="notification">${message}</div>`;
         this.notificationContainer.style.display = 'block'; // Show the notification container
     }
 
     clearNotification() {
-        console.log('clearNotification called');
         this.notificationContainer.innerHTML = '';
         this.notificationContainer.style.display = 'none'; // Hide the notification container
     }
@@ -131,16 +127,11 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
                 // Filter properties based on DATAGRID_CONFIG.requiredProps
                 const filteredProps = result.properties.filter(prop => 
                     DATAGRID_CONFIG.requiredProps.includes(`${prop.displayCategory}/${prop.displayName}`));
-                // console.log('result.properties:', result.properties);
-                // console.log('DATAGRID_CONFIG.requiredProps:', DATAGRID_CONFIG.requiredProps);
-                // console.log('filteredProps:', filteredProps);
                 const resolvedObject = {
                     dbId: result.dbId,
                     name: result.name,
                     properties: filteredProps
                 };
-                // console.log('resolvedObject:', resolvedObject);
-
                 resolve(resolvedObject);
             }, reject);
         }));

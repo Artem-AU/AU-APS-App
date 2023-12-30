@@ -14,9 +14,13 @@ class LoggerExtension extends BaseExtension {
     }
 
     async onModelLoaded(model) {
-        super.onModelLoaded(model);        
-        const props = await this.findPropertyNames(this.viewer.model);
+        super.onModelLoaded(model); 
+        const targetNodes = await this.findTargetNodes(model);       
+        const props = await this.findPropertyNames(model);
+        console.log('Target nodes:', targetNodes);
         console.log('New model has been loaded. Its objects contain the following properties:', props);
+        //log total number of values, target nodes length * props length, represented in millions
+        console.log('Total number of property values:', targetNodes.length * props.length / 1000000, 'millions');
     }
 
     async onSelectionChanged(model, dbids) {

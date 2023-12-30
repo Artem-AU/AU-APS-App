@@ -48,42 +48,32 @@ class ExportPropsExtension extends BaseExtension {
     async onModelLoaded(model) {
         super.onModelLoaded(model);
 
-        // Get the doc object from the model
-        const doc = model.getDocumentNode().getDocument();
-        const data = doc.getRoot().data.children[0];
-        const fileName = data.name;
-        // console.log(fileName);
+        const fileName = this.getFileInfo(model, "name");
 
         // Pass the fileName to the panel
-        this._panel.setFileName(fileName);
-
+        if (this._panel) {
+            this._panel.setFileName(fileName);
+        }
         
         if (this._panel && this._panel.isVisible()) {
             this.update();
         }
 
-        // Get the doc object from the model
-        // const doc = model.getDocumentNode().getDocument();
-
         // Get the properties of the model
         const props = await this.findPropertyNames(model);
-        // console.log(props);
         // Get the existing dropdown with the properties
         const dropdown = document.getElementById('property-dropdown');
         $(dropdown).select2(); // Initialize Select2 on your dropdown
-        // console.log("DROPDOWN FOUND");
         props.forEach(prop => {
             const option = document.createElement('option');
             option.value = prop;
             option.text = prop;
             dropdown.appendChild(option);
         });
-        // console.log(dropdown);
 
         $(dropdown).on('change', async () => {
             // Get the currently selected options
             let selectedOptions = $(dropdown).select2('data').map(option => option.text);
-            // console.log(selectedOptions);
 
             // If the user cleared the selection, set selectedOptions to all properties
             if (selectedOptions.length === 0) {
@@ -100,7 +90,6 @@ class ExportPropsExtension extends BaseExtension {
 
         // Get the selected options from the dropdown
         const selectedOptions = $(dropdown).select2('data').map(option => option.text);
-        // console.log(selectedOptions);
 
         // Call setupDataGridConfig with the properties
         this._panel.setupDataGridConfig(props);
