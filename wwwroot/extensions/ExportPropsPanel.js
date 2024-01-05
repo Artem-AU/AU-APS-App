@@ -14,10 +14,11 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.extension = extension;
         this.container.style.left = (options.x || 0) + 'px';
         this.container.style.top = (options.y || 0) + 'px';
-        this.container.style.width = (options.width || 800) + 'px';
+        this.container.style.width = (options.width || 1500) + 'px';
         this.container.style.height = (options.height || 600) + 'px';
+        this.container.style.maxwidth = '3000px';
         this.container.style.resize = 'both'; // Allow both horizontal and vertical resizing
-        this.container.style.overflow = 'auto'; // Add scrollbars if content overflows
+        this.container.style.overflow = 'hidden'; // Add scrollbars if content overflows
 
         this.notificationContainer = document.createElement('div');
         this.notificationContainer.id = 'notificationContainer';
@@ -71,20 +72,21 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.initializeMoveHandlers(this.title);
         this.container.appendChild(this.title);
         this.content = document.createElement('div');
-        this.content.style.height = 'calc(100% - 93px)';
+        let titleHeight = this.title.offsetHeight;
+        this.content.style.height = `calc(100% - ${titleHeight}px)`;
         this.content.style.backgroundColor = 'white';
         this.content.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 3px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px; height: 30px;">
                 <span style="color: black; align-self: center; padding: 0 10px;">Filter:</span>
-                <div style="display: flex; justify-content: flex-start; align-items: center; flex-grow: 1;">
-                    <select id="property-dropdown" style="width: 80%; overflow: hidden;" multiple></select>
+                <div style="justify-content: flex-start; align-items: center; flex-grow: 1; height: 30px;">
+                    <select id="property-dropdown" style="width: 80%; height: 100%; overflow: hidden;" multiple></select>
                 </div>
                 <button id="download-csv" style="background-color: lightgreen; color: black; display: flex; align-items: center; justify-content: center; border-radius: 5px; cursor: pointer; width: 50px; height: 20px;">
                     <img src="https://cdn3.iconfinder.com/data/icons/internet-relative/200/Download-64.png" alt="Download Icon" style="height: 20px; margin-right: 5px;">
                     CSV
                 </button>
             </div>
-            <div class="exportprop-container" style="position: relative; height: 350px;"></div>
+            <div class="exportprop-container" style="position: relative; height: calc(100% - 36px);"></div>
         `;
         // After appending the content to the container
         this.container.appendChild(this.content);
@@ -100,9 +102,11 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
 
     createTable() {
         this.table = new Tabulator('.exportprop-container', {
-            height: '100%',
             layout: 'fitColumns',
-            columns: DATAGRID_CONFIG.columns,
+            columns: [
+                {title: "Name", field: "name", width: 200}, // Set width to 100px
+                ...DATAGRID_CONFIG.columns.slice(1) // Rest of the columns
+            ],
             groupBy: DATAGRID_CONFIG.groupBy,
             rowClick: (e, row) => DATAGRID_CONFIG.onRowClick(row.getData(), this.extension.viewer)
         });
