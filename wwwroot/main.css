@@ -60,10 +60,23 @@ body, html {
 #models {
     flex: 0 1 auto;
     min-width: 2em;
+} 
+
+.select2-container {
+    height: 30px !important;
+    padding: auto !important;
+}
+
+.select2-selection--multiple {
+    padding: 0 !important;
+    min-height: 30px !important;
+    max-height: 30px !important;
+    overflow: hidden !important;
 }
 
 .select2-selection__choice {
     color: black !important;
+    margin: auto 3px !important;
 }
 
 #notificationContainer {

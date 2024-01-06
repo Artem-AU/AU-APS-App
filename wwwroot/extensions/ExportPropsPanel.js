@@ -81,8 +81,8 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
                 <div style="justify-content: flex-start; align-items: center; flex-grow: 1; height: 30px;">
                     <select id="property-dropdown" style="width: 80%; height: 100%; overflow: hidden;" multiple></select>
                 </div>
-                <button id="download-csv" style="background-color: lightgreen; color: black; display: flex; align-items: center; justify-content: center; border-radius: 5px; cursor: pointer; width: 50px; height: 20px;">
-                    <img src="https://cdn3.iconfinder.com/data/icons/internet-relative/200/Download-64.png" alt="Download Icon" style="height: 20px; margin-right: 5px;">
+                <button id="download-csv" style="background-color: lightgreen; color: black; border: solid black 1px; display: flex; align-items: center; justify-content: center; border-radius: 5px; cursor: pointer; width: 50px; height: 20px;">
+                    <img src="https://cdn4.iconfinder.com/data/icons/ionicons/512/icon-ios7-cloud-download-outline-64.png" alt="Download Icon" style="height: 20px; margin-right: 5px;">
                     CSV
                 </button>
             </div>
