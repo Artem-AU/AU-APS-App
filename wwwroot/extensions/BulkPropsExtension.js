@@ -1,7 +1,7 @@
 import { BaseExtension } from './BaseExtension.js';
-import { ExportPropsPanel } from './ExportPropsPanel.js';
+import { BulkPropsPanel } from './BulkPropsPanel.js';
 
-class ExportPropsExtension extends BaseExtension {
+class BulkPropsExtension extends BaseExtension {
     constructor(viewer, options) {
         super(viewer, options);
         this._button = null;
@@ -14,7 +14,7 @@ class ExportPropsExtension extends BaseExtension {
             this.loadScript('https://unpkg.com/tabulator-tables@4.9.3/dist/js/tabulator.min.js', 'Tabulator'),
             this.loadStylesheet('https://unpkg.com/tabulator-tables@4.9.3/dist/css/tabulator.min.css')
         ]);
-        console.log('ExportPropsExtension loaded.');
+        console.log('BulkPropsExtension loaded.');
         return true;
     }
 
@@ -29,13 +29,13 @@ class ExportPropsExtension extends BaseExtension {
             this._panel.uninitialize();
             this._panel = null;
         }
-        console.log('ExportPropsExtension unloaded.');
+        console.log('BulkPropsExtension unloaded.');
         return true;
     }
 
     onToolbarCreated() {
-        this._panel = new ExportPropsPanel(this, 'dashboard-exportprops-panel', 'Export Properties', { x: 10, y: 50});
-        this._button = this.createToolbarButton('dashboard-exportprops-button', 'https://cdn0.iconfinder.com/data/icons/infographic-element-8/512/26_Diagram-64.png', 'Export Props', "lightgreen");
+        this._panel = new BulkPropsPanel(this, 'dashboard-bulkprops-panel', 'Bulk Properties', { x: 10, y: 50});
+        this._button = this.createToolbarButton('dashboard-bulkprops-button', 'https://cdn0.iconfinder.com/data/icons/infographic-element-8/512/26_Diagram-64.png', 'Bulk Props', "lightgreen");
         this._button.onClick = () => {
             this._panel.setVisible(!this._panel.isVisible());
             this._button.setState(this._panel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
@@ -104,4 +104,4 @@ class ExportPropsExtension extends BaseExtension {
     }
 }
 
-Autodesk.Viewing.theExtensionManager.registerExtension('ExportPropsExtension', ExportPropsExtension);
+Autodesk.Viewing.theExtensionManager.registerExtension('BulkPropsExtension', BulkPropsExtension);

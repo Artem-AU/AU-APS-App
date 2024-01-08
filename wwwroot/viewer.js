@@ -4,7 +4,7 @@ import './extensions/SummaryExtension.js';
 import './extensions/HistogramExtension.js';
 import './extensions/DataGridExtension.js';
 import './extensions/ReconstructPropsExtension.js';
-import './extensions/ExportPropsExtension.js';
+import './extensions/BulkPropsExtension.js';
 import './extensions/SearchExtension.js';
 
 
@@ -35,7 +35,7 @@ export function initViewer(container) {
                     // 'HistogramExtension',
                     // 'DataGridExtension',
                     // 'ReconstructPropsExtension',
-                    'ExportPropsExtension',
+                    'BulkPropsExtension',
                     'SearchExtension'
                 ]
             };

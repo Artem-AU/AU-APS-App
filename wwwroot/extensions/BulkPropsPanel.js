@@ -8,7 +8,7 @@ let DATAGRID_CONFIG = {
     }
 };
 
-export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
+export class BulkPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
     constructor(extension, id, title, options) {
         super(extension.viewer.container, id, title, options);
         this.extension = extension;
@@ -77,8 +77,8 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.content.style.backgroundColor = 'white';
         this.content.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px; height: 30px;">
-                <span style="color: black; align-self: center; padding: 0 10px;">Filter:</span>
                 <div style="justify-content: flex-start; align-items: center; flex-grow: 1; height: 30px;">
+                    <label for="property-dropdown" style="color: black; align-self: center; padding: 0 10px;">Filter:</label>
                     <select id="property-dropdown" style="width: 80%; height: 100%; overflow: hidden;" multiple></select>
                 </div>
                 <button id="download-csv" style="background-color: lightgreen; color: black; border: solid black 1px; display: flex; align-items: center; justify-content: center; border-radius: 5px; cursor: pointer; width: 50px; height: 20px;">
@@ -86,7 +86,7 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
                     CSV
                 </button>
             </div>
-            <div class="exportprop-container" style="position: relative; height: calc(100% - 36px);"></div>
+            <div class="bulkprop-container" style="position: relative; height: calc(100% - 36px);"></div>
         `;
         // After appending the content to the container
         this.container.appendChild(this.content);
@@ -101,7 +101,7 @@ export class ExportPropsPanel extends Autodesk.Viewing.UI.DockingPanel {
     }
 
     createTable() {
-        this.table = new Tabulator('.exportprop-container', {
+        this.table = new Tabulator('.bulkprop-container', {
             layout: 'fitColumns',
             columns: [
                 {title: "Name", field: "name", width: 200}, // Set width to 100px
