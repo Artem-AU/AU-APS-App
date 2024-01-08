@@ -5,18 +5,24 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.container.style.right = (options.x || 0) + 'px';
         this.container.style.top = (options.y || 0) + 'px';
         this.container.style.width = (options.width || 400) + 'px';
+        this.container.style.minWidth = '400px';
         this.container.style.height = (options.height || 450) + 'px';
-        this.container.style.resize = 'none';
+        this.container.style.minHeight = '450px';
+        this.container.style.resize = 'auto';
         this.chartType = options.chartType || 'bar'; // See https://www.chartjs.org/docs/latest for all the supported types of charts
         this.chart = this.createChart();
     }
 
     initialize() {
         this.title = this.createTitleBar(this.titleLabel || this.container.id);
+        this.closer = this.createCloseButton(); 
+        this.initializeCloseHandler(this.closer);
         this.initializeMoveHandlers(this.title);
         this.container.appendChild(this.title);
+        this.container.appendChild(this.closer);
         this.content = document.createElement('div');
-        this.content.style.height = '400px';
+        this.content.style.height = '100%';
+        this.content.style.width = '100%';
         this.content.style.backgroundColor = 'white';
         this.content.innerHTML = `
             <div class="props-container" style="position: relative; height: 25px; padding: 0.5em;">
