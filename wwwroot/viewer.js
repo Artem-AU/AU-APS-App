@@ -32,7 +32,7 @@ export function initViewer(container) {
                     'Autodesk.Explode',
                     'LoggerExtension',
                     // 'SummaryExtension',
-                    // 'HistogramExtension',
+                    'HistogramExtension',
                     // 'DataGridExtension',
                     // 'ReconstructPropsExtension',
                     'BulkPropsExtension',

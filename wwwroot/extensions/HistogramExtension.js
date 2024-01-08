@@ -66,9 +66,11 @@ class HistogramExtension extends BaseExtension {
     }
 
     async findPropertyValueOccurrences(model, propertyName) {
-        const dbids = await this.findLeafNodes(model);
+        const dbids = await this.findTargetNodes(model);
+        const [displayCategory, displayName] = propertyName.split('/');
+
         return new Promise(function (resolve, reject) {
-            model.getBulkProperties(dbids, { propFilter: [propertyName] }, function (results) {
+            model.getBulkProperties(dbids, { propFilter: [displayCategory, displayName] }, function (results) {
                 let histogram = new Map();
                 for (const result of results) {
                     if (result.properties.length > 0) {
