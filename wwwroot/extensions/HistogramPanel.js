@@ -9,8 +9,11 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.container.style.height = (options.height || 450) + 'px';
         this.container.style.minHeight = '450px';
         this.container.style.resize = 'auto';
-        this.chartType = options.chartType || 'bar'; // See https://www.chartjs.org/docs/latest for all the supported types of charts
-        this.chart = this.createChart();
+        this.chartType = options.chartType || 'ColumnChart'; // Default to ColumnChart for Google Charts
+
+        // Load the Google Charts library and set a callback to be executed once it's loaded
+        google.charts.load('current', { packages: ['corechart'] });
+        google.charts.setOnLoadCallback(() => this.isGoogleChartsLoaded = true);
     }
 
     initialize() {
@@ -30,25 +33,14 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
                 <button class="export-button">Export Chart</button>
             </div>
             <div class="chart-container" style="position: relative; height: 325px; padding: 0.5em;">
-                <canvas class="chart"></canvas>
+                <div class="chart"></div>
             </div>
         `;
         this.select = this.content.querySelector('select.props');
-        this.canvas = this.content.querySelector('canvas.chart');
+        this.chartDiv = this.content.querySelector('div.chart');
         this.exportButton = this.content.querySelector('button.export-button');
         this.exportButton.onclick = () => this.exportChart();
         this.container.appendChild(this.content);
-    }
-
-    createChart() {
-        return new Chart(this.canvas.getContext('2d'), {
-            type: this.chartType,
-            data: {
-                labels: [],
-                datasets: [{ data: [], backgroundColor: [], borderColor: [], borderWidth: 1 }],
-            },
-            options: { maintainAspectRatio: false }
-        });
     }
 
     async setModel(model) {
@@ -59,41 +51,61 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
     }
 
     async updateChart(model, propName) {
+        // Check if the Google Charts library is loaded before proceeding
+        if (!this.isGoogleChartsLoaded) {
+            console.error('Google Charts library is not loaded yet');
+            return;
+        }
         const histogram = await this.extension.findPropertyValueOccurrences(model, propName);
         const propertyValues = Array.from(histogram.keys());
-        this.chart.data.labels = propertyValues;
-        const dataset = this.chart.data.datasets[0];
-        dataset.label = propName;
-        dataset.data = propertyValues.map(val => histogram.get(val).length);
-        if (dataset.data.length > 0) {
-            const hslaColors = dataset.data.map((val, index) => `hsla(${Math.round(index * (360 / dataset.data.length))}, 100%, 50%, 0.2)`);
-            dataset.backgroundColor = dataset.borderColor = hslaColors;
-        }
-        this.chart.update();
-        this.chart.config.options.onClick = (ev, items) => {
-            if (items.length === 1) {
-                const index = items[0].index;
-                const dbids = histogram.get(propertyValues[index]);
-                this.extension.viewer.isolate(dbids);
-                this.extension.viewer.fitToView(dbids);
-            }
+        const data = new google.visualization.DataTable();
+        data.addColumn('string', propName);
+        data.addColumn('number', 'Count');
+        data.addRows(propertyValues.map(val => [String(val), histogram.get(val).length]));
+        const options = {
+            title: propName,
+            width: this.chartDiv.offsetWidth,
+            height: this.chartDiv.offsetHeight,
+            legend: { position: 'none' },
         };
+
+        console.log(this.chartType); // Log the value of this.chartType
+
+        const chart = new google.visualization[this.chartType](this.chartDiv);
+        chart.draw(data, options);
+
+        // Add an event listener for the window's resize event
+        window.addEventListener('resize', () => {
+            // Update the chart's width and height to match the container's offsetWidth and offsetHeight
+            options.width = this.chartDiv.offsetWidth;
+            options.height = this.chartDiv.offsetHeight;
+
+            // Redraw the chart with the updated options
+            chart.draw(data, options);
+        });
+
+        // Add an event listener for the chart's select event
+        google.visualization.events.addListener(chart, 'select', () => {
+            // Get information about the selected element
+            const selection = chart.getSelection();
+
+            // If an element is selected
+            if (selection.length > 0) {
+                // Get the row and column of the selected element
+                const row = selection[0].row;
+                const column = selection[0].column;
+
+                // Get the value of the selected element
+                const selectedValue = data.getValue(row, column);
+
+                // Now you can use selectedValue to select the associated model elements
+                // ...
+            }
+        });
     }
 
     exportChart() {
-        const width = this.canvas.width;
-        const height = this.canvas.height;
-        const exportCanvas = document.createElement('canvas');
-        exportCanvas.width = width;
-        exportCanvas.height = height;
-        const context = exportCanvas.getContext('2d');
-        context.fillStyle = 'white';
-        context.fillRect(0, 0, width, height);
-        context.drawImage(this.canvas, 0, 0);
-        const dataUrl = exportCanvas.toDataURL("image/png");
-        const link = document.createElement('a');
-        link.download = 'chart.png';
-        link.href = dataUrl;
-        link.click();
+        // Google Charts doesn't provide a built-in method to export the chart as an image.
+        // You may need to use a third-party library or a server-side solution to export the chart.
     }
 }

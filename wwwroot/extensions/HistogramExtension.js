@@ -12,8 +12,7 @@ class HistogramExtension extends BaseExtension {
 
     async load() {
         super.load();
-        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js', 'Chart');
-        Chart.defaults.plugins.legend.display = false;
+        await this.loadScript('https://www.gstatic.com/charts/loader.js', 'google.charts'); // Changed from Chart.js to Google Charts
         console.log('HistogramExtension loaded.');
         return true;
     }
@@ -34,8 +33,8 @@ class HistogramExtension extends BaseExtension {
     }
 
     onToolbarCreated() {
-        this._barChartPanel = new HistogramPanel(this, 'dashboard-barchart-panel', 'Property Histogram', { x: 10, y: 10, chartType: 'bar' });
-        this._pieChartPanel = new HistogramPanel(this, 'dashboard-piechart-panel', 'Property Histogram', { x: 10, y: 470, chartType: 'doughnut' });
+        this._barChartPanel = new HistogramPanel(this, 'dashboard-barchart-panel', 'Property Histogram', { x: 10, y: 10, chartType: 'BarChart' });
+        this._pieChartPanel = new HistogramPanel(this, 'dashboard-piechart-panel', 'Property Histogram', { x: 10, y: 470, chartType: 'PieChart' });
 
         this._barChartButton = this.createToolbarButton('dashboard-barchart-button', 'https://img.icons8.com/small/32/bar-chart.png', 'Property Histogram (Bar Chart)');
         this._barChartButton.onClick = () => {
