@@ -4,9 +4,9 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.extension = extension;
         this.container.style.right = (options.x || 0) + 'px';
         this.container.style.top = (options.y || 0) + 'px';
-        this.container.style.width = (options.width || 400) + 'px';
+        this.container.style.width = (options.width || 900) + 'px';
         this.container.style.minWidth = '400px';
-        this.container.style.height = (options.height || 450) + 'px';
+        this.container.style.height = (options.height || 600) + 'px';
         this.container.style.minHeight = '450px';
         this.container.style.resize = 'auto';
         this.chartType = options.chartType || 'ColumnChart'; // Default to ColumnChart for Google Charts
@@ -24,22 +24,18 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.container.appendChild(this.title);
         this.container.appendChild(this.closer);
         this.content = document.createElement('div');
-        this.content.style.height = '100%';
+        let titleHeight = this.title.offsetHeight;
+        this.content.style.height = `calc(100% - ${titleHeight}px)`;
         this.content.style.width = '100%';
         this.content.style.backgroundColor = 'white';
         this.content.innerHTML = `
-            <div class="props-container" style="position: relative; height: 25px; padding: 0.5em;">
-                <select class="props"></select>
-                <button class="export-button">Export Chart</button>
+            <div class="props-container" style="height: 20px; padding: 3px 10px;">
+                <select class="props" style="height: 100%;"></select>
             </div>
-            <div class="chart-container" style="position: relative; height: 325px; padding: 0.5em;">
-                <div class="chart"></div>
-            </div>
+            <div class="chart" style="position: relative; height: calc(100% - 26px); overflow-y: scroll"></div>
         `;
         this.select = this.content.querySelector('select.props');
         this.chartDiv = this.content.querySelector('div.chart');
-        this.exportButton = this.content.querySelector('button.export-button');
-        this.exportButton.onclick = () => this.exportChart();
         this.container.appendChild(this.content);
     }
 
@@ -62,25 +58,31 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
         data.addColumn('string', propName);
         data.addColumn('number', 'Count');
         data.addRows(propertyValues.map(val => [String(val), histogram.get(val).length]));
+        console.log(data);
         const options = {
             title: propName,
-            width: this.chartDiv.offsetWidth,
-            height: this.chartDiv.offsetHeight,
-            legend: { position: 'none' },
+            width: this.chartDiv.offsetWidth * 0.9,
+            height: this.chartDiv.offsetHeight * 0.9,
+            legend: { position: 'top' },
+            animation: {
+                duration: 1000, // Duration in milliseconds
+                easing: 'inAndOut', // Easing function
+                startup: true, // Animate on initial draw
+            },
+            chartArea:{left:150,top:0,width:'100%',height:'100%'}
         };
-
         console.log(this.chartType); // Log the value of this.chartType
 
         const chart = new google.visualization[this.chartType](this.chartDiv);
         chart.draw(data, options);
 
         // Add an event listener for the window's resize event
-        window.addEventListener('resize', () => {
-            // Update the chart's width and height to match the container's offsetWidth and offsetHeight
-            options.width = this.chartDiv.offsetWidth;
-            options.height = this.chartDiv.offsetHeight;
+            window.addEventListener('resize', () => {
+                // Update the chart's width and height to match the container's offsetWidth and offsetHeight
+options.width = this.chartDiv.offsetWidth;
+        options.height = this.chartDiv.offsetHeight;
 
-            // Redraw the chart with the updated options
+        // Redraw the chart with the updated options
             chart.draw(data, options);
         });
 
@@ -91,15 +93,18 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
 
             // If an element is selected
             if (selection.length > 0) {
-                // Get the row and column of the selected element
+                // Get the row of the selected element
                 const row = selection[0].row;
-                const column = selection[0].column;
 
                 // Get the value of the selected element
-                const selectedValue = data.getValue(row, column);
+                const selectedValue = data.getValue(row, 0); // 0 is the column index for property values
 
-                // Now you can use selectedValue to select the associated model elements
-                // ...
+                // Get the DBIDs associated with the selected value
+                const dbids = histogram.get(selectedValue);
+
+                // Isolate and fit the viewer to these DBIDs
+                this.extension.viewer.isolate(dbids);
+                this.extension.viewer.fitToView(dbids);
             }
         });
     }
