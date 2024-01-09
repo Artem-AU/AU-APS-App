@@ -32,7 +32,7 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
             <div class="props-container" style="height: 20px; padding: 3px 10px;">
                 <select class="props" style="height: 100%;"></select>
             </div>
-            <div class="chart" style="position: relative; height: calc(100% - 26px); overflow-y: scroll"></div>
+            <div class="chart" style="position: relative; height: calc(100% - 26px);"></div>
         `;
         this.select = this.content.querySelector('select.props');
         this.chartDiv = this.content.querySelector('div.chart');
@@ -54,37 +54,38 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
         }
         const histogram = await this.extension.findPropertyValueOccurrences(model, propName);
         const propertyValues = Array.from(histogram.keys());
-        const data = new google.visualization.DataTable();
-        data.addColumn('string', propName);
-        data.addColumn('number', 'Count');
-        data.addRows(propertyValues.map(val => [String(val), histogram.get(val).length]));
-        console.log(data);
+
+        // Define an array of colors for the bars
+        const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'];
+
+        // Create an array of data rows, each with a color and an annotation from the colors array
+        const dataRows = propertyValues.map((val, i) => [String(val), histogram.get(val).length, `color: ${colors[i % colors.length]}; opacity: 0.6`, String(histogram.get(val).length)]);
+
+        // Create the data table
+        const data = new google.visualization.arrayToDataTable([
+            [propName, 'Count', { role: 'style' }, { role: 'annotation' }],
+            ...dataRows
+        ]);
+
+
         const options = {
             title: propName,
-            width: this.chartDiv.offsetWidth * 0.9,
-            height: this.chartDiv.offsetHeight * 0.9,
-            legend: { position: 'top' },
+            width: this.chartDiv.offsetWidth - 20,
+            height: this.chartDiv.offsetHeight - 20,
+            legend: { position: 'none' },
             animation: {
                 duration: 1000, // Duration in milliseconds
                 easing: 'inAndOut', // Easing function
                 startup: true, // Animate on initial draw
             },
-            chartArea:{left:150,top:0,width:'100%',height:'100%'}
+            chartArea:{left:200,top:50,width: '90%',height:'80%'},
+            hAxis: {
+                scaleType: 'log' // Set the horizontal axis to a logarithmic scale
+            }
         };
-        console.log(this.chartType); // Log the value of this.chartType
 
         const chart = new google.visualization[this.chartType](this.chartDiv);
         chart.draw(data, options);
-
-        // Add an event listener for the window's resize event
-            window.addEventListener('resize', () => {
-                // Update the chart's width and height to match the container's offsetWidth and offsetHeight
-options.width = this.chartDiv.offsetWidth;
-        options.height = this.chartDiv.offsetHeight;
-
-        // Redraw the chart with the updated options
-            chart.draw(data, options);
-        });
 
         // Add an event listener for the chart's select event
         google.visualization.events.addListener(chart, 'select', () => {

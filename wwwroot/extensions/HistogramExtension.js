@@ -33,10 +33,10 @@ class HistogramExtension extends BaseExtension {
     }
 
     onToolbarCreated() {
-        this._barChartPanel = new HistogramPanel(this, 'dashboard-barchart-panel', 'Property Histogram', { x: 10, y: 40, chartType: 'BarChart' });
+        this._barChartPanel = new HistogramPanel(this, 'dashboard-barchart-panel', 'Property Histogram', { x: 10, y: 50, chartType: 'BarChart' });
         this._pieChartPanel = new HistogramPanel(this, 'dashboard-piechart-panel', 'Property Histogram', { x: 10, y: 470, chartType: 'PieChart' });
 
-        this._barChartButton = this.createToolbarButton('dashboard-barchart-button', 'https://img.icons8.com/small/32/bar-chart.png', 'Property Histogram (Bar Chart)');
+        this._barChartButton = this.createToolbarButton('dashboard-barchart-button', 'https://img.icons8.com/small/32/bar-chart.png', 'Property Histogram (Bar Chart)', 'lightblue');
         this._barChartButton.onClick = () => {
             this._barChartPanel.setVisible(!this._barChartPanel.isVisible());
             this._barChartButton.setState(this._barChartPanel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
@@ -44,39 +44,39 @@ class HistogramExtension extends BaseExtension {
                 this._barChartPanel.setModel(this.viewer.model);
             }
         };
-        this._pieChartButton = this.createToolbarButton('dashboard-piechart-button', 'https://img.icons8.com/small/32/pie-chart.png', 'Property Histogram (Pie Chart)');
-        this._pieChartButton.onClick = () => {
-            this._pieChartPanel.setVisible(!this._pieChartPanel.isVisible());
-            this._pieChartButton.setState(this._pieChartPanel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
-            if (this._pieChartPanel.isVisible() && this.viewer.model) {
-                this._pieChartPanel.setModel(this.viewer.model);
-            }
-        };
+        // this._pieChartButton = this.createToolbarButton('dashboard-piechart-button', 'https://img.icons8.com/small/32/pie-chart.png', 'Property Histogram (Pie Chart)');
+        // this._pieChartButton.onClick = () => {
+        //     this._pieChartPanel.setVisible(!this._pieChartPanel.isVisible());
+        //     this._pieChartButton.setState(this._pieChartPanel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
+        //     if (this._pieChartPanel.isVisible() && this.viewer.model) {
+        //         this._pieChartPanel.setModel(this.viewer.model);
+        //     }
+        // };
+    }
+
+    onModelLoaded(model) {
+        super.onModelLoaded(model);
+        if (this._barChartPanel && this._barChartPanel.isVisible()) {
+            this._barChartPanel.setModel(model);
+        }
+        if (this._pieChartPanel && this._pieChartPanel.isVisible()) {
+            this._pieChartPanel.setModel(model);
+        }
     }
 
     // onModelLoaded(model) {
     //     super.onModelLoaded(model);
-    //     if (this._barChartPanel && this._barChartPanel.isVisible()) {
+    //     if (this._barChartPanel) {
+    //         this._barChartPanel.setVisible(true);
     //         this._barChartPanel.setModel(model);
+    //         this._barChartButton.setState(Autodesk.Viewing.UI.Button.State.ACTIVE);
     //     }
-    //     if (this._pieChartPanel && this._pieChartPanel.isVisible()) {
-    //         this._pieChartPanel.setModel(model);
-    //     }
+    //     // if (this._pieChartPanel) {
+    //     //     this._pieChartPanel.setVisible(true);
+    //     //     this._pieChartPanel.setModel(model);
+    //     //     this._pieChartButton.setState(Autodesk.Viewing.UI.Button.State.ACTIVE);
+    //     // }
     // }
-
-    onModelLoaded(model) {
-        super.onModelLoaded(model);
-        if (this._barChartPanel) {
-            this._barChartPanel.setVisible(true);
-            this._barChartPanel.setModel(model);
-            this._barChartButton.setState(Autodesk.Viewing.UI.Button.State.ACTIVE);
-        }
-        // if (this._pieChartPanel) {
-        //     this._pieChartPanel.setVisible(true);
-        //     this._pieChartPanel.setModel(model);
-        //     this._pieChartButton.setState(Autodesk.Viewing.UI.Button.State.ACTIVE);
-        // }
-    }
 
     async findPropertyValueOccurrences(model, propertyName) {
         const dbids = await this.findTargetNodes(model);
