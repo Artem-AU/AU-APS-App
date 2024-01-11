@@ -6,6 +6,7 @@ import './extensions/DataGridExtension.js';
 import './extensions/ReconstructPropsExtension.js';
 import './extensions/BulkPropsExtension.js';
 import './extensions/SearchExtension.js';
+import './extensions/PolyCountExtension.js';
 
 
 
@@ -36,7 +37,8 @@ export function initViewer(container) {
                     // 'DataGridExtension',
                     // 'ReconstructPropsExtension',
                     'BulkPropsExtension',
-                    'SearchExtension'
+                    'SearchExtension',
+                    'PolyCountExtension'
                 ]
             };
             const viewer = new Autodesk.Viewing.GuiViewer3D(container, config);

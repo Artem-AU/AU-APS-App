@@ -5,9 +5,7 @@ class HistogramExtension extends BaseExtension {
     constructor(viewer, options) {
         super(viewer, options);
         this._barChartButton = null;
-        this._pieChartButton = null;
         this._barChartPanel = null;
-        this._pieChartPanel = null;
     }
 
     async load() {
@@ -19,22 +17,21 @@ class HistogramExtension extends BaseExtension {
 
     unload() {
         super.unload();
-        for (const button of [this._barChartButton, this._pieChartButton]) {
+        for (const button of [this._barChartButton]) {
             this.removeToolbarButton(button);
         }
-        this._barChartButton = this._pieChartButton = null;
-        for (const panel of [this._barChartPanel, this._pieChartPanel]) {
+        this._barChartButton = null;
+        for (const panel of [this._barChartPanel]) {
             panel.setVisible(false);
             panel.uninitialize();
         }
-        this._barChartPanel = this._pieChartPanel = null;
+        this._barChartPanel = null;
         console.log('HistogramExtension unloaded.');
         return true;
     }
 
     onToolbarCreated() {
         this._barChartPanel = new HistogramPanel(this, 'dashboard-barchart-panel', 'Property Histogram', { x: 10, y: 50, chartType: 'BarChart' });
-        this._pieChartPanel = new HistogramPanel(this, 'dashboard-piechart-panel', 'Property Histogram', { x: 10, y: 470, chartType: 'PieChart' });
 
         this._barChartButton = this.createToolbarButton('dashboard-barchart-button', 'https://img.icons8.com/small/32/bar-chart.png', 'Property Histogram (Bar Chart)', 'lightblue');
         this._barChartButton.onClick = () => {
@@ -44,14 +41,6 @@ class HistogramExtension extends BaseExtension {
                 this._barChartPanel.setModel(this.viewer.model);
             }
         };
-        // this._pieChartButton = this.createToolbarButton('dashboard-piechart-button', 'https://img.icons8.com/small/32/pie-chart.png', 'Property Histogram (Pie Chart)');
-        // this._pieChartButton.onClick = () => {
-        //     this._pieChartPanel.setVisible(!this._pieChartPanel.isVisible());
-        //     this._pieChartButton.setState(this._pieChartPanel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
-        //     if (this._pieChartPanel.isVisible() && this.viewer.model) {
-        //         this._pieChartPanel.setModel(this.viewer.model);
-        //     }
-        // };
     }
 
     onModelLoaded(model) {
@@ -59,24 +48,7 @@ class HistogramExtension extends BaseExtension {
         if (this._barChartPanel && this._barChartPanel.isVisible()) {
             this._barChartPanel.setModel(model);
         }
-        if (this._pieChartPanel && this._pieChartPanel.isVisible()) {
-            this._pieChartPanel.setModel(model);
-        }
     }
-
-    // onModelLoaded(model) {
-    //     super.onModelLoaded(model);
-    //     if (this._barChartPanel) {
-    //         this._barChartPanel.setVisible(true);
-    //         this._barChartPanel.setModel(model);
-    //         this._barChartButton.setState(Autodesk.Viewing.UI.Button.State.ACTIVE);
-    //     }
-    //     // if (this._pieChartPanel) {
-    //     //     this._pieChartPanel.setVisible(true);
-    //     //     this._pieChartPanel.setModel(model);
-    //     //     this._pieChartButton.setState(Autodesk.Viewing.UI.Button.State.ACTIVE);
-    //     // }
-    // }
 
     async findPropertyValueOccurrences(model, propertyName) {
         const dbids = await this.findTargetNodes(model);
