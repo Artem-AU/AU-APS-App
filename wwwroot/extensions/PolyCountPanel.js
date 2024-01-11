@@ -28,11 +28,16 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.content.style.height = `calc(100% - ${titleHeight}px)`;
         this.content.style.overflow = 'auto';
         this.content.id = 'dashboard_div';
+        this.content.style.backgroundColor = 'white';   
         this.container.appendChild(this.content);
 
         // Create the filter_div and chart_div elements
         this.filterDiv = document.createElement('div');
         this.filterDiv.id = 'filter_div';
+        // Set the opacity of the filterDiv to 0 to make it fully transparent
+        this.filterDiv.style.opacity = "0";
+        // If you want to prevent interaction with the filterDiv, set pointer-events to none
+        this.filterDiv.style.pointerEvents = "none";
         this.content.appendChild(this.filterDiv);
 
         this.chartDiv = document.createElement('div');
@@ -68,21 +73,36 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
             // Get the properties of the node
             this.extension.viewer.model.getProperties(dbId, (props) => {
                 // Initialize the data for the name if it doesn't exist
-                if (!nameData[props.name]) {
-                    nameData[props.name] = { instances: 0, polycount: 0 };
+                let cleanName = props.name.split(/[\[:]/)[0].trim();
+
+                if (!nameData[cleanName]) {
+                    nameData[cleanName] = { instances: 0, polycount: 0, namePolycount: 0, dbids: [] };
                 }
 
                 // Increment the instance count for the name
-                nameData[props.name].instances++;
+                nameData[cleanName].instances++;
 
                 // Update the polycount for the name
-                nameData[props.name].polycount = totalTriCount;
+                nameData[cleanName].polycount = totalTriCount;
+
+                // Calculate the Name Polycount
+                nameData[cleanName].namePolycount = nameData[cleanName].instances * totalTriCount;
+
+                nameData[cleanName].dbids.push(dbId);
 
                 resolve();
             });
         }));
 
         await Promise.all(promises);
+
+        console.log(nameData);
+
+        // Convert the nameData object to an array of arrays
+        const nameDataArray = Object.entries(nameData).map(([name, {instances, polycount, namePolycount}]) => [name, instances, polycount, namePolycount]);
+
+        // Sort the array by the 'Name Polycount' (index 3), in descending order
+        nameDataArray.sort((a, b) => b[3] - a[3]);
 
         // Create an empty data table
         var data = new google.visualization.DataTable();
@@ -91,25 +111,13 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
         data.addColumn('number', 'Instance Polycount');
         data.addColumn('number', 'Name Polycount');
 
-        let totalNamePolycount = 0;
-
-
         // Add a row to the data table for each unique name
-        for (const name in nameData) {
-            const instances = nameData[name].instances;
-            const instancePolycount = nameData[name].polycount;
-            const namePolycount = instances * instancePolycount;
-
-            totalNamePolycount += namePolycount;
-
+        for (const [name, instances, instancePolycount, namePolycount] of nameDataArray) {
             data.addRow([name, instances, instancePolycount, namePolycount]);
         }
 
-        console.log('Total Name Polycount:', totalNamePolycount);
-
-
-        // Sort the data table by the 'Name Polycount' column (column index 3)
-        data.sort([{column: 3, desc: true}]);
+        // // Sort the data table by the 'Name Polycount' column (column index 3)
+        // data.sort([{column: 3, desc: true}]);
 
         // Create a dashboard.
         var dashboard = new google.visualization.Dashboard(
@@ -129,7 +137,7 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
             'chartType': 'Table',
             'containerId': 'chart_div',
             'options': {
-                'width': 300,
+                'width': "100%",
                 'height': 300,
                 'alternatingRowStyle': true,
                 'legend': 'right',
@@ -147,6 +155,32 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
 
         // Draw the dashboard.
         dashboard.draw(data);
+
+        // Add an event listener for the chart's ready event
+        google.visualization.events.addListener(tableChart, 'ready', () => {
+            // Add an event listener for the chart's select event
+            google.visualization.events.addListener(tableChart.getChart(), 'select', () => {
+                // Get information about the selected element
+                const selection = tableChart.getChart().getSelection();
+
+                // If an element is selected
+                if (selection.length > 0) {
+                    // Get the row of the selected element
+                    const row = selection[0].row;
+
+                    // Get the value of the selected element
+                    const selectedValue = data.getValue(row, 0); // 0 is the column index for property values
+                    console.log('Selected value:', selectedValue);
+
+                    // Get the DBIDs associated with the selected value
+                    const dbids = nameData[selectedValue].dbids;
+
+                    // Isolate and fit the viewer to these DBIDs
+                    this.extension.viewer.isolate(dbids);
+                    this.extension.viewer.fitToView(dbids);
+                }
+            });
+        });
     }
 
 
@@ -175,8 +209,6 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
                 const childNodes = await getAllChildNodes(this.extension.viewer.model, dbId);
                 targetNodesWithChildren[dbId] = childNodes;
             }
-
-            console.log(targetNodesWithChildren);
 
             // Call drawDashboard with targetNodes
             this.drawDashboard(targetNodes);

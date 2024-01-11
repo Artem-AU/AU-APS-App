@@ -30,10 +30,10 @@ export class PolyCountExtension extends BaseExtension {
     }
 
     onToolbarCreated() {
-        this._polyCountPanel = new PolyCountPanel(this, 'polycount-panel', 'PolyCount Panel', {
+        this._polyCountPanel = new PolyCountPanel(this, 'polycount-panel', 'PolyCount Report', {
             x: 100,
             y: 100,
-            width: 400,
+            width: 600,
             height: 300
         });
 
@@ -43,8 +43,8 @@ export class PolyCountExtension extends BaseExtension {
         this._polyCountButton = this.createToolbarButton(
             'polycount-button', 
             'https://cdn1.iconfinder.com/data/icons/commonmat/24/zoomout-256.png', 
-            'PolyCount Button', 
-            'lightblue'
+            'PolyCount Report', 
+            'lightyellow'
         );
         this._polyCountButton.onClick = () => {
             this._polyCountPanel.setVisible(!this._polyCountPanel.isVisible());
