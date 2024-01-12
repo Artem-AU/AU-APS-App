@@ -22,6 +22,12 @@ class LoggerExtension extends BaseExtension {
         //log total number of values, target nodes length * props length, represented in millions
         console.log('Total number of property values:', targetNodes.length * props.length / 1000000, 'millions');
 
+        
+        // Log the polygon counts
+        console.log('Geometry polygon count:', model.geomPolyCount());
+        console.log('Instance polygon count:', model.instancePolyCount());
+
+
         // Get the viewer instance
         const viewer = this.viewer;
 

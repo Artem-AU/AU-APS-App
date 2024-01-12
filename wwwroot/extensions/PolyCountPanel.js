@@ -9,7 +9,6 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.container.style.height = (options.height || 600) + 'px';
         this.container.style.minHeight = '450px';
         this.container.style.resize = 'auto';
-        this.chartType = options.chartType || 'ColumnChart'; // Default to ColumnChart for Google Charts
 
         // Load the Google Charts library and set a callback to be executed once it's loaded
         google.charts.load('current', {'packages':['table', 'controls']});
