@@ -18,6 +18,10 @@ body, html {
     align-items: center;
 }
 
+#input {
+    display: none;
+}
+
 #preview, #overlay {
     top: 3em;
     bottom: 0;

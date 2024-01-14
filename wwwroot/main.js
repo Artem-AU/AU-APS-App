@@ -3,7 +3,7 @@ import { initViewer, loadModel } from './viewer.js';
 initViewer(document.getElementById('preview')).then(viewer => {
 
     // Get the registered default profile
-    const defaultProfile = viewer.profileManager.getProfileOrDefault();
+    // const defaultProfile = viewer.profileManager.getProfileOrDefault();
     // console.log(defaultProfile);
 
     // Create and set the custom profile

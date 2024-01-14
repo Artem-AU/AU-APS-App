@@ -4,6 +4,7 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
         this._onObjectTreeCreated = (ev) => this.onModelLoaded(ev.model);
         this._onSelectionChanged = (ev) => this.onSelectionChanged(ev.model, ev.dbIdArray);
         this._onIsolationChanged = (ev) => this.onIsolationChanged(ev.model, ev.nodeIdArray);
+        this._onGeometryLoaded = (ev) => this.onGeometryLoaded(ev.model);
         this.ifcTypeExclude = new Set(['File', 'Representation', 'Line', 'Curve',  'Area', 'Boolean', 'Geometry', 'Composite', 'Mapped', 'Site', 'Project', 'Building', 'Storey'].map(v => v.toLowerCase()));
 
     }
@@ -12,6 +13,7 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
         this.viewer.addEventListener(Autodesk.Viewing.OBJECT_TREE_CREATED_EVENT, this._onObjectTreeCreated);
         this.viewer.addEventListener(Autodesk.Viewing.SELECTION_CHANGED_EVENT, this._onSelectionChanged);
         this.viewer.addEventListener(Autodesk.Viewing.ISOLATE_EVENT, this._onIsolationChanged);
+        this.viewer.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, this._onGeometryLoaded);
         return true;
     }
 
@@ -19,6 +21,7 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
         this.viewer.removeEventListener(Autodesk.Viewing.OBJECT_TREE_CREATED_EVENT, this._onObjectTreeCreated);
         this.viewer.removeEventListener(Autodesk.Viewing.SELECTION_CHANGED_EVENT, this._onSelectionChanged);
         this.viewer.removeEventListener(Autodesk.Viewing.ISOLATE_EVENT, this._onIsolationChanged);
+        this.viewer.removeEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, this._onGeometryLoaded);
         return true;
     }
     
@@ -27,6 +30,8 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
     onSelectionChanged(model, dbids) {}
 
     onIsolationChanged(model, dbids) {}
+
+    onGeometryLoaded(model) {}
 
     getFileInfo(model, property) {
         const doc = model.getDocumentNode().getDocument();
@@ -50,7 +55,7 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
     }
 
     async findIfcNodes(targetNodes = null, options = {}) {
-        console.log('---findIfcNodes');
+        // console.log('---findIfcNodes');
         if (targetNodes === null) {
             targetNodes = await this.getAllDbIds();
         }
@@ -70,7 +75,7 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
     }
 
     async findNavisNodes(targetNodes = null, options = {}) {
-        console.log('---findNavisNodes');
+        // console.log('---findNavisNodes');
         if (targetNodes === null) {
             targetNodes = await this.getAllDbIds();
         }    
@@ -91,7 +96,7 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
     }
 
     async findRevitNodes(model) {
-        console.log('---findRevitNodes');
+        // console.log('---findRevitNodes');
         return new Promise((resolve, reject) => {
             model.getObjectTree((tree) => {
                 let leaves = [];

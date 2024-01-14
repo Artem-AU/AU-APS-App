@@ -18,14 +18,14 @@ class LoggerExtension extends BaseExtension {
         const targetNodes = await this.findTargetNodes(model);       
         const props = await this.findPropertyNames(model);
         console.log('Target nodes:', targetNodes);
-        console.log('New model has been loaded. Its objects contain the following properties:', props);
+        // console.log('New model has been loaded. Its objects contain the following properties:', props);
         //log total number of values, target nodes length * props length, represented in millions
-        console.log('Total number of property values:', targetNodes.length * props.length / 1000000, 'millions');
+        // console.log('Total number of property values:', targetNodes.length * props.length / 1000000, 'millions');
 
         
         // Log the polygon counts
-        console.log('Geometry polygon count:', model.geomPolyCount());
-        console.log('Instance polygon count:', model.instancePolyCount());
+        // console.log('Geometry polygon count:', model.geomPolyCount());
+        // console.log('Instance polygon count:', model.instancePolyCount());
 
 
         // Get the viewer instance

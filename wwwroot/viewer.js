@@ -7,6 +7,7 @@ import './extensions/ReconstructPropsExtension.js';
 import './extensions/BulkPropsExtension.js';
 import './extensions/SearchExtension.js';
 import './extensions/PolyCountExtension.js';
+import './extensions/TestExtension.js';
 
 
 
@@ -38,7 +39,8 @@ export function initViewer(container) {
                     // 'ReconstructPropsExtension',
                     'BulkPropsExtension',
                     'SearchExtension',
-                    'PolyCountExtension'
+                    'PolyCountExtension',
+                    // 'TestExtension'
                 ]
             };
             const viewer = new Autodesk.Viewing.GuiViewer3D(container, config);
