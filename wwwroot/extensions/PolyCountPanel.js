@@ -11,7 +11,7 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.container.style.resize = 'auto';
 
         // Load the Google Charts library and set a callback to be executed once it's loaded
-        google.charts.load('current', {'packages':['table', 'controls']});
+        google.charts.load('current', {'packages':['table', "gauge", 'controls']});
         google.charts.setOnLoadCallback(() => this.isGoogleChartsLoaded = true);
     }
 
@@ -42,6 +42,10 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.chartDiv = document.createElement('div');
         this.chartDiv.id = 'chart_div';
         this.content.appendChild(this.chartDiv);
+
+        this.gaugeDiv = document.createElement('div');
+        this.gaugeDiv.id = 'gauge_div';
+        this.content.appendChild(this.gaugeDiv);
     }
 
     async drawDashboard(targetNodes) {
@@ -115,6 +119,18 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
             data.addRow([name, instances, instancePolycount, namePolycount]);
         }
 
+        // Create an empty data table for the gauge chart
+        var gaugeData = new google.visualization.DataTable();
+        gaugeData.addColumn('string', 'Label');
+        gaugeData.addColumn('number', 'Value');
+
+        // Add a row to the gauge data table for each unique name
+        for (const [name, instances, instancePolycount, namePolycount] of nameDataArray) {
+            gaugeData.addRow([name, instances]);  // Use instances as the value for the gauge
+        }
+
+
+
         // // Sort the data table by the 'Name Polycount' column (column index 3)
         // data.sort([{column: 3, desc: true}]);
 
@@ -146,6 +162,23 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
                 }
             }
         }); 
+
+        // Create a gauge chart using a ChartWrapper, passing some options
+        var gaugeChart = new google.visualization.ChartWrapper({
+            'chartType': 'Gauge',
+            'containerId': 'gauge_div',  // Assuming you have a div with id 'gauge_div'
+            'dataTable': gaugeData,
+            'options': {
+                width: 400, height: 120,
+                redFrom: 90, redTo: 100,
+                yellowFrom:75, yellowTo: 90,
+                minorTicks: 5,
+                max: this.model.instancePolyCount()  // Set the maximum value to model.instancePolyCount()
+            }
+        });
+
+        // Draw the gauge chart
+        gaugeChart.draw();
 
         // Establish dependencies, declaring that 'filter' drives 'tableChart',
         // so that the table chart will only display entries that are let through
@@ -187,27 +220,6 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
         super.setVisible(show);
         if (show) {
             const targetNodes = await this.extension.findTargetNodes(this.extension.viewer.model);
-
-            // Helper function to get all child nodes of a given node
-            const getAllChildNodes = (model, dbId) => new Promise((resolve, reject) => {
-                const instanceTree = model.getData().instanceTree;
-                const childNodes = [];
-
-                instanceTree.enumNodeChildren(dbId, (childId) => {
-                    childNodes.push(childId);
-                }, false);
-
-                resolve(childNodes);
-            });
-
-            // Create an object to store the target nodes and their child nodes
-            const targetNodesWithChildren = {};
-
-            // Get all child nodes of each target node and add them to the object
-            for (const dbId of targetNodes) {
-                const childNodes = await getAllChildNodes(this.extension.viewer.model, dbId);
-                targetNodesWithChildren[dbId] = childNodes;
-            }
 
             // Call drawDashboard with targetNodes
             this.drawDashboard(targetNodes);

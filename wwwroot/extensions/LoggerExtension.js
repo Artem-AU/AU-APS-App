@@ -14,10 +14,20 @@ class LoggerExtension extends BaseExtension {
     }
 
     async onModelLoaded(model) {
-        super.onModelLoaded(model); 
+        super.onModelLoaded(model);
         const targetNodes = await this.findTargetNodes(model);       
         const props = await this.findPropertyNames(model);
         console.log('Target nodes:', targetNodes);
+
+        const fileName = this.getFileInfo(model, "name");
+        console.log('File name:', fileName);
+        const fileType = this.getFileInfo(model, "inputFileType");
+        console.log('File type:', fileType);
+
+        // //getDocumentNode()
+        // console.log('Document node:', model.getDocumentNode().getRoot());
+
+
         // console.log('New model has been loaded. Its objects contain the following properties:', props);
         //log total number of values, target nodes length * props length, represented in millions
         // console.log('Total number of property values:', targetNodes.length * props.length / 1000000, 'millions');
@@ -26,6 +36,7 @@ class LoggerExtension extends BaseExtension {
         // Log the polygon counts
         // console.log('Geometry polygon count:', model.geomPolyCount());
         // console.log('Instance polygon count:', model.instancePolyCount());
+
 
 
         // Get the viewer instance

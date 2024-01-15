@@ -40,7 +40,7 @@ export function initViewer(container) {
                     'BulkPropsExtension',
                     'SearchExtension',
                     'PolyCountExtension',
-                    // 'TestExtension'
+                    'TestExtension'
                 ]
             };
             const viewer = new Autodesk.Viewing.GuiViewer3D(container, config);

@@ -37,9 +37,6 @@ export class PolyCountExtension extends BaseExtension {
             height: 300
         });
 
-        // // Make the panel visible
-        // this._polyCountPanel.setVisible(true);
-
         this._polyCountButton = this.createToolbarButton(
             'polycount-button', 
             'https://cdn1.iconfinder.com/data/icons/commonmat/24/zoomout-256.png', 
@@ -49,9 +46,6 @@ export class PolyCountExtension extends BaseExtension {
         this._polyCountButton.onClick = () => {
             this._polyCountPanel.setVisible(!this._polyCountPanel.isVisible());
             this._polyCountButton.setState(this._polyCountPanel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
-            // if (this._polyCountPanel.isVisible() && this.viewer.model) {
-            //     this._polyCountPanel.setModel(this.viewer.model);
-            // }
         };
     }
 
@@ -62,13 +56,27 @@ export class PolyCountExtension extends BaseExtension {
         }
     }
 
-        // onModelLoaded(model) {
-    //     super.onModelLoaded(model);
-    //     if (this._barChartPanel) {
-    //         this._barChartPanel.setVisible(true);
-    //         this._barChartPanel.setModel(model);
-    //         this._barChartButton.setState(Autodesk.Viewing.UI.Button.State.ACTIVE);
-    //     }
+    onGeometryLoaded(model) {
+        super.onGeometryLoaded(model);
+        console.log('Geometry loaded.');
+        
+        // let totalTriCount = 0;
+
+        // // Get the fragment IDs for each dbId
+        // model.getData().instanceTree.enumNodeFragments(dbId, (fragId) => {
+        //     // Get the triangle count for each fragment
+        //     const renderProxy = this.viewer.impl.getRenderProxy(model, fragId);
+
+        //     if (renderProxy && renderProxy.geometry) {
+        //         const polyCount = renderProxy.geometry.polyCount;
+        //         totalTriCount += polyCount;
+        //     }
+        // }, true);
+
+
+    
+    }
+
 }
 
 Autodesk.Viewing.theExtensionManager.registerExtension('PolyCountExtension', PolyCountExtension);
