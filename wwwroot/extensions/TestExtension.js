@@ -14,6 +14,7 @@ class TestExtension extends BaseExtension {
 
         // Initialize googleDataTable as null
         this.googleDataTable = null;
+        this.totalPolyCount = 0;  // Add this line
 
         // Load the Google Charts library and set a callback to be executed once it's loaded
         google.charts.load('current', {'packages':['table', "gauge"]});
@@ -43,7 +44,7 @@ class TestExtension extends BaseExtension {
     }
 
     onToolbarCreated() {
-        this._panel = new TestPanel(this, 'dashboard-test-panel', 'Test', { x: 10, y: 50});
+        this._panel = new TestPanel(this, 'dashboard-test-panel', 'PolyCount Report', { x: 50, y: 100});
         this._button = this.createToolbarButton('dashboard-test-button', 'https://cdn1.iconfinder.com/data/icons/creative-commons-5/20/outline_miscellaneous-close-64.png', 'Test', "lightgreen");
         this._button.onClick = () => {
             this._panel.setVisible(!this._panel.isVisible());
@@ -118,14 +119,30 @@ class TestExtension extends BaseExtension {
             // this.googleDataTable.addRow([cleanName, this.tableData[cleanName].instances, this.tableData[cleanName].polycount]);
         }
 
-        // Iterate over each unique name
-        for (const cleanName in this.tableData) {
-            // Add a row for each unique name
-            this.googleDataTable.addRow([cleanName, this.tableData[cleanName].instances, this.tableData[cleanName].polycount]);
-}
+        // Convert tableData into an array of objects
+        let tableDataArray = Object.keys(this.tableData).map(name => ({
+            name: name,
+            instances: this.tableData[name].instances,
+            polycount: this.tableData[name].polycount,
+            dbids: this.tableData[name].dbids
+        }));
+
+        // Sort the array by polycount in descending order
+        tableDataArray.sort((a, b) => b.polycount - a.polycount);
+
+        // Iterate over each item in the sorted array
+        for (const item of tableDataArray) {
+            // Add a row for each item
+            this.googleDataTable.addRow([item.name, item.instances, item.polycount]);
+        }
 
         // Resolve the promise
         this.resolveDataTable();
+        
+
+        this.totalPolyCount = model.instancePolyCount();  // Add this line
+        console.log('---TEST totalPolyCount', this.totalPolyCount);  // Add this line
+
 
         console.log('---TEST polyCounts', this.tableData);
         console.log('---TEST googleDataTable', this.googleDataTable);

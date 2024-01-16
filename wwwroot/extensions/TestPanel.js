@@ -4,11 +4,13 @@ export class TestPanel extends Autodesk.Viewing.UI.DockingPanel {
         super(extension.viewer.container, id, title, options);
         this.extension = extension;
         this.container.style.right = (options.x || 0) + 'px';
-        this.container.style.bottom = (options.y || 0) + 'px';
-        this.container.style.width = (options.width || 600) + 'px';
-        this.container.style.height = (options.height || 600) + 'px';
-        this.container.style.resize = 'both'; // Allow both horizontal and vertical resizing
+        this.container.style.top = (options.y || 0) + 'px';
+        this.container.style.width = (options.width || 900) + 'px';
+        this.container.style.height = (options.height || 300) + 'px';
+        // this.container.style.resize = 'both'; // Allow both horizontal and vertical resizing
         this.container.style.overflow = 'hidden'; // Add scrollbars if content overflows
+
+        // this.table = null;  // Add this line
 
         // Load the Google Charts library and set a callback to be executed once it's loaded
         google.charts.load('current', {'packages':['table', "gauge"]});
@@ -16,7 +18,6 @@ export class TestPanel extends Autodesk.Viewing.UI.DockingPanel {
         
     }
 
-    
     initialize() {
         this.title = this.createTitleBar(this.titleLabel || this.container.id);
         this.initializeMoveHandlers(this.title);
@@ -27,44 +28,30 @@ export class TestPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.content.style.height = `calc(100% - ${titleHeight}px)`;
         // this.content.style.backgroundColor = 'white';
 
-        this.chartDiv = document.createElement('div');
-        this.chartDiv.id = 'chart_div';
-        this.chartDiv.textContent = 'Chart Div';
-        this.chartDiv.style.backgroundColor = 'red';
-        this.chartDiv.style.height = '250px';  
-        this.content.appendChild(this.chartDiv);
+        // Set the display property of the content to flex
+        this.content.style.display = 'flex';
+        this.content.style.flexDirection = 'row';
+
+        this.tableDiv = document.createElement('div');
+        this.tableDiv.id = 'chart_div';
+        this.tableDiv.textContent = 'Chart Div';
+        this.tableDiv.style.backgroundColor = 'red';
+        this.tableDiv.style.height = '250px';  
+        this.tableDiv.style.flex = '2';  // Add this line
+        this.content.appendChild(this.tableDiv);
 
         this.gaugeDiv = document.createElement('div');
         this.gaugeDiv.id = 'gauge_div';
         this.gaugeDiv.textContent = 'Gauge Div';
-        this.gaugeDiv.style.backgroundColor = 'blue';
+        this.gaugeDiv.style.backgroundColor = '#808080';
         this.gaugeDiv.style.height = '250px';
+        this.gaugeDiv.style.flex = '1';  // Keep this line as is
+        // Add these lines
+        this.gaugeDiv.style.display = 'flex';
+        this.gaugeDiv.style.justifyContent = 'center';
+        this.gaugeDiv.style.alignItems = 'center';
         this.content.appendChild(this.gaugeDiv);
-
     }
-
-    // defineTableData() {
-    //     // Get tableData from the extension
-    //     const tableData = this.extension.tableData;
-
-    //     console.log('---TEST tableData', tableData);
-
-
-    //     // Create a new DataTable
-    //     this.googleDataTable = new google.visualization.DataTable();
-
-    //     // Define the columns
-    //     this.googleDataTable.addColumn('string', 'Name');
-    //     this.googleDataTable.addColumn('number', 'Instances');
-    //     this.googleDataTable.addColumn('number', 'Polycount');
-
-    //     // Add a row for each unique name
-    //     for (const name in tableData) {
-    //         console.log('---TEST name', name);
-    //         const { instances, polycount } = tableData[name];
-    //         this.googleDataTable.addRow([name, instances, polycount]);
-    //     }
-    // }
 
     defineGaugeData() {
         // define some arbitrary data for the gauge using google charts
@@ -72,13 +59,13 @@ export class TestPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.gaugeData.addColumn('string', 'Label');
         this.gaugeData.addColumn('number', 'Value');
         this.gaugeData.addRows([
-            ['Memory', 80]
+            ['PolyCount', 0]
         ]);
     }
 
     drawTable() {
         // Use googleDataTable from the extension directly
-        this.table = new google.visualization.Table(this.chartDiv);
+        this.table = new google.visualization.Table(this.tableDiv);
         this.table.draw(this.extension.googleDataTable, {
             showRowNumber: true, 
             width: '100%', 
@@ -87,21 +74,64 @@ export class TestPanel extends Autodesk.Viewing.UI.DockingPanel {
                 headerCell: 'blackText',
                 tableCell: 'blackText'
             }
-        });    }
+        });  
+    }
 
     drawGauge() {
-        // draw the gauge using google charts, call the defineGaugeData function first
-        this.defineGaugeData();
         this.gauge = new google.visualization.Gauge(this.gaugeDiv);
-        this.gauge.draw(this.gaugeData, {width: '100%', height: '100%', redFrom: 90, redTo: 100, yellowFrom: 75, yellowTo: 90, minorTicks: 5});
 
+        const totalPolyCount = this.extension.totalPolyCount;
+        const currentValue = this.gaugeData.getValue(0, 1);  // Get the current value
+
+        // // Format the gauge data
+        // var formatter = new google.visualization.NumberFormat({pattern: '# ### K'});
+        // formatter.format(this.gaugeData, 1);  // Apply formatter to second column
+
+        const options = {
+            width: '100%', 
+            height: '100%', 
+            redFrom: 0,  // Start red section from 0
+            redTo: currentValue,  // End red section at current value
+            yellowFrom:currentValue, 
+            yellowTo: totalPolyCount,
+            minorTicks: 5,
+            max: totalPolyCount,
+        };
+
+        this.gauge.draw(this.gaugeData, options);
+        console.log('---TEST Gauge drawn'); 
     }
 
     updatePanel() {
         // Wait for dataTablePromise to resolve before calling drawTable
         this.extension.dataTablePromise.then(() => {
             this.drawTable();
+            // Define the gauge data and draw the gauge initially
+            this.defineGaugeData();
+            this.drawGauge();
+            // Add 'select' event listener
+            google.visualization.events.addListener(this.table, 'select', () => {
+                console.log("select fired");
+
+                // Get the selected row
+                const selection = this.table.getSelection();
+                if (selection.length === 0) return;  // No row is selected
+
+                // Get the Polycount value of the selected row
+                const row = selection[0].row;
+                const polycount = this.extension.googleDataTable.getValue(row, 2);  // Assuming Polycount is the third column
+                console.log('---TEST polycount', polycount);
+                console.log('---TEST this.gaugeData', this.gaugeData);
+
+                // Update the gauge data
+                this.gaugeData.setValue(0, 1, polycount);
+                console.log('---TEST SET this.gaugeData', this.gaugeData);
+
+                // this.updateGauge();  // Update the gauge data based on the selected row
+                this.drawGauge();  // Redraw the gauge
+            });
         });
-        this.drawGauge();
-    }   
+
+        // this.drawGauge();
+    } 
 }

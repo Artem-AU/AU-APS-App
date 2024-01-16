@@ -73,6 +73,7 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
             width: this.chartDiv.offsetWidth - 20,
             height: this.chartDiv.offsetHeight - 20,
             legend: { position: 'none' },
+            fontName: 'ArtifaktElement',
             animation: {
                 duration: 1000, // Duration in milliseconds
                 easing: 'inAndOut', // Easing function
@@ -104,6 +105,7 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
                 const dbids = histogram.get(selectedValue);
 
                 // Isolate and fit the viewer to these DBIDs
+                this.extension.viewer.select(dbids);
                 this.extension.viewer.isolate(dbids);
                 this.extension.viewer.fitToView(dbids);
             }

@@ -1,82 +1,118 @@
-import { BaseExtension } from './BaseExtension.js';
-import { PolyCountPanel } from './PolyCountPanel.js'; // Import the PolyCountPanel class
+import { BaseExtension } from "./BaseExtension.js";
+import { PolyCountPanel } from "./PolyCountPanel.js";
 
-export class PolyCountExtension extends BaseExtension {
+class PolyCountExtension extends BaseExtension {
     constructor(viewer, options) {
         super(viewer, options);
-        this._polyCountButton = null;
-        this._polyCountPanel = null; // Add a property for the panel
+        this._viewer = viewer;
+        this._options = options;
+        this.tableData = {}
+        // Initialize dataTablePromise and resolveDataTable
+        this.dataTablePromise = new Promise((resolve) => {
+            this.resolveDataTable = resolve;
+        });
+        // Initialize googleDataTable as null
+        this.googleDataTable = null;
+        this.totalPolyCount = 0;
+        // Load the Google Charts library and set a callback to be executed once it's loaded
+        google.charts.load('current', {'packages':['table', "gauge"]});
+        google.charts.setOnLoadCallback(() => this.isGoogleChartsLoaded = true);
     }
 
-    async load() {
+    load() {
         super.load();
-        await this.loadScript('https://www.gstatic.com/charts/loader.js', 'google.charts'); // Changed from Chart.js to Google Charts
         console.log('PolyCountExtension loaded.');
         return true;
     }
 
     unload() {
         super.unload();
-        if (this._polyCountButton) {
-            this.removeToolbarButton(this._polyCountButton);
+        if (this._button) {
+            this.removeToolbarButton(this._button);
+            this._button = null;
         }
-        this._polyCountButton = null;
-        if (this._polyCountPanel) {
-            this._polyCountPanel.uninitialize(); // Uninitialize the panel
+        if (this._panel) {
+            this._panel.setVisible(false);
+            this._panel.uninitialize();
+            this._panel = null;
         }
-        this._polyCountPanel = null;
         console.log('PolyCountExtension unloaded.');
         return true;
     }
 
     onToolbarCreated() {
-        this._polyCountPanel = new PolyCountPanel(this, 'polycount-panel', 'PolyCount Report', {
-            x: 100,
-            y: 100,
-            width: 600,
-            height: 300
-        });
-
-        this._polyCountButton = this.createToolbarButton(
-            'polycount-button', 
-            'https://cdn1.iconfinder.com/data/icons/commonmat/24/zoomout-256.png', 
-            'PolyCount Report', 
-            'lightyellow'
-        );
-        this._polyCountButton.onClick = () => {
-            this._polyCountPanel.setVisible(!this._polyCountPanel.isVisible());
-            this._polyCountButton.setState(this._polyCountPanel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
+        this._panel = new PolyCountPanel(this, 'dashboard-test-panel', 'PolyCount Report', { x: 50, y: 100});
+        this._button = this.createToolbarButton('dashboard-test-button', 'https://cdn1.iconfinder.com/data/icons/web-con-set-117-line/128/polygons_plane-figure_geometrical_pentagon_hexagon_quadrilateral_side_vertex_polygram_two-dimension-64.png', 'PolyCount report by Category', "lightyellow");
+        this._button.onClick = () => {
+            this._panel.setVisible(!this._panel.isVisible());
+            this._button.setState(this._panel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
+            if (this._panel.isVisible() && this.viewer.model) {
+                this._panel.updatePanel();
+            }
         };
     }
 
-    onModelLoaded(model) {
-        super.onModelLoaded(model);
-        if (this._polyCountPanel && this._polyCountPanel.isVisible()) {
-            this._polyCountPanel.setModel(model);
-        }
-    }
-
-    onGeometryLoaded(model) {
+    async onGeometryLoaded(model) {
         super.onGeometryLoaded(model);
-        console.log('Geometry loaded.');
+
+        const targetNodes = await this.findTargetNodes(model);
+
+        // Get the instance tree
+        const instanceTree = model.getData().instanceTree;
+
+        // Create a new DataTable
+        this.googleDataTable = new google.visualization.DataTable();
+
+        // Define the columns
+        this.googleDataTable.addColumn('string', 'Name');
+        this.googleDataTable.addColumn('number', 'Instances');
+        this.googleDataTable.addColumn('number', 'Polycount');
+
+        // Iterate over each dbId
+        for (const dbId of targetNodes) {
+            let totalTriCount = 0;
+
+            // Get the fragment IDs for each dbId
+            instanceTree.enumNodeFragments(dbId, (fragId) => {
+                // Get the triangle count for each fragment
+                const renderProxy = this.viewer.impl.getRenderProxy(model, fragId);
+
+                if (renderProxy && renderProxy.geometry) {
+                    const polyCount = renderProxy.geometry.polyCount;
+                    totalTriCount += polyCount;
+                }
+            }, true);
+
+            // Get the node name
+            const nodeName = instanceTree.getNodeName(dbId);
+
+            // Initialize the data for the name if it doesn't exist
+            let cleanName = nodeName.split(/[[\:]/)[0].trim();
+
+            if (!this.tableData[cleanName]) {
+                this.tableData[cleanName] = { instances: 0, polycount: 0, dbids: [] };
+            }
+
+            // Increment the instance count for the name
+            this.tableData[cleanName].instances++;
+
+            // Calculate the Name Polycount
+            this.tableData[cleanName].polycount += totalTriCount;
+            this.tableData[cleanName].dbids.push(dbId);
+
+        }
+
+        // Iterate over each item in tableData
+        for (let name in this.tableData) {
+            // Add a row for each item
+            this.googleDataTable.addRow([name, this.tableData[name].instances, this.tableData[name].polycount]);
+        }
+
+        // Resolve the promise
+        this.resolveDataTable();
         
-        // let totalTriCount = 0;
-
-        // // Get the fragment IDs for each dbId
-        // model.getData().instanceTree.enumNodeFragments(dbId, (fragId) => {
-        //     // Get the triangle count for each fragment
-        //     const renderProxy = this.viewer.impl.getRenderProxy(model, fragId);
-
-        //     if (renderProxy && renderProxy.geometry) {
-        //         const polyCount = renderProxy.geometry.polyCount;
-        //         totalTriCount += polyCount;
-        //     }
-        // }, true);
-
-
-    
-    }
-
+        this.totalPolyCount = model.instancePolyCount();
+    }        
 }
 
 Autodesk.Viewing.theExtensionManager.registerExtension('PolyCountExtension', PolyCountExtension);

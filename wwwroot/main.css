@@ -102,6 +102,14 @@ body, html {
     display: inline-block;
 }
 
-.blackText {
+.googleTableHeader {
     color: black;
+    font-family: ArtifaktElement;
+    font-weight: bold;
+    background-color: lightsalmon;
+}
+
+.googleTableRows {
+    color: black;
+    font-family: ArtifaktElement;
 }
