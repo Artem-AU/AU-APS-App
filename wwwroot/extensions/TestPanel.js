@@ -1,4 +1,3 @@
-
 export class TestPanel extends Autodesk.Viewing.UI.DockingPanel {
     constructor(extension, id, title, options) {
         super(extension.viewer.container, id, title, options);
@@ -6,132 +5,212 @@ export class TestPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.container.style.right = (options.x || 0) + 'px';
         this.container.style.top = (options.y || 0) + 'px';
         this.container.style.width = (options.width || 900) + 'px';
-        this.container.style.height = (options.height || 300) + 'px';
-        // this.container.style.resize = 'both'; // Allow both horizontal and vertical resizing
-        this.container.style.overflow = 'hidden'; // Add scrollbars if content overflows
-
-        // this.table = null;  // Add this line
-
-        // Load the Google Charts library and set a callback to be executed once it's loaded
-        google.charts.load('current', {'packages':['table', "gauge"]});
-        google.charts.setOnLoadCallback(() => this.isGoogleChartsLoaded = true);
-        
+        this.container.style.height = (options.height || 600) + 'px' 
+        this.valueFilterDrawn = false; // Add this line        
     }
 
     initialize() {
         this.title = this.createTitleBar(this.titleLabel || this.container.id);
         this.initializeMoveHandlers(this.title);
         this.container.appendChild(this.title);
-        this.content = document.createElement('div');
-        this.container.appendChild(this.content);
+        this.dashboardDiv = document.createElement('div');
+        this.container.appendChild(this.dashboardDiv);
         let titleHeight = this.title.offsetHeight;
-        this.content.style.height = `calc(100% - ${titleHeight}px)`;
-        // this.content.style.backgroundColor = 'white';
+        this.dashboardDiv.style.height = `calc(100% - ${titleHeight}px)`;
+        this.dashboardDiv.style.display = 'flex';
+        this.dashboardDiv.style.flexDirection = 'row';
 
-        // Set the display property of the content to flex
-        this.content.style.display = 'flex';
-        this.content.style.flexDirection = 'row';
+        this.valueFilterDiv = document.createElement('div');
+        this.valueFilterDiv.id = 'valueFilter_div';
+        this.valueFilterDiv.textContent = 'Filter Div';
+        this.valueFilterDiv.style.backgroundColor = 'gray';
+        this.valueFilterDiv.style.flex = '0 0 20%';  // Fixed width of 20%
+        this.valueFilterColumnDiv = document.createElement('div');
+        this.valueFilterDiv.appendChild(this.valueFilterColumnDiv);
+        this.valueFilterValueDiv = document.createElement('div');
+        this.valueFilterDiv.appendChild(this.valueFilterValueDiv);
+        this.dashboardDiv.appendChild(this.valueFilterDiv);
+        
 
         this.tableDiv = document.createElement('div');
-        this.tableDiv.id = 'chart_div';
-        this.tableDiv.textContent = 'Chart Div';
+        this.tableDiv.id = 'table_div';
+        this.tableDiv.textContent = 'Table Div';
         this.tableDiv.style.backgroundColor = 'red';
-        this.tableDiv.style.height = '250px';  
-        this.tableDiv.style.flex = '2';  // Add this line
-        this.content.appendChild(this.tableDiv);
+        this.tableDiv.style.flex = '1 0 60%';  // Take up the remaining space
+        this.tableDiv.style.overflow = 'auto';  // Add scrollbar when content overflows
+        this.dashboardDiv.appendChild(this.tableDiv);
 
-        this.gaugeDiv = document.createElement('div');
-        this.gaugeDiv.id = 'gauge_div';
-        this.gaugeDiv.textContent = 'Gauge Div';
-        this.gaugeDiv.style.backgroundColor = '#808080';
-        this.gaugeDiv.style.height = '250px';
-        this.gaugeDiv.style.flex = '1';  // Keep this line as is
-        // Add these lines
-        this.gaugeDiv.style.display = 'flex';
-        this.gaugeDiv.style.justifyContent = 'center';
-        this.gaugeDiv.style.alignItems = 'center';
-        this.content.appendChild(this.gaugeDiv);
+        this.columnFilterDiv = document.createElement('div');
+        this.columnFilterDiv.id = 'columnFilter_div';
+        this.columnFilterDiv.textContent = 'Filter Div';
+        this.columnFilterDiv.style.backgroundColor = 'lightsteelblue';
+        this.columnFilterDiv.style.flex = '0 0 20%';  // Fixed width of 20%
+        this.dashboardDiv.appendChild(this.columnFilterDiv);
+
     }
 
-    defineGaugeData() {
-        // define some arbitrary data for the gauge using google charts
-        this.gaugeData = new google.visualization.DataTable();
-        this.gaugeData.addColumn('string', 'Label');
-        this.gaugeData.addColumn('number', 'Value');
-        this.gaugeData.addRows([
-            ['PolyCount', 0]
-        ]);
-    }
 
-    drawTable() {
-        // Use googleDataTable from the extension directly
-        this.table = new google.visualization.Table(this.tableDiv);
-        this.table.draw(this.extension.googleDataTable, {
-            showRowNumber: true, 
-            width: '100%', 
-            height: '100%',
-            cssClassNames: {
-                headerCell: 'blackText',
-                tableCell: 'blackText'
+    createTable() {
+        // Get the googleDataTable from the extension
+        this.data = this.extension.getDataTable();
+        console.log(" createTable Data", this.data);
+
+        // Create an array of column definitions
+        this.columns = [];
+
+        // Add a column for each header in the data
+        this.data[0].forEach(header => {
+            if (!header.startsWith('_') && header !== 'Name' && header !== 'dbId') {
+                this.columns.push({title: header, field: header});
             }
-        });  
-    }
-
-    drawGauge() {
-        this.gauge = new google.visualization.Gauge(this.gaugeDiv);
-
-        const totalPolyCount = this.extension.totalPolyCount;
-        const currentValue = this.gaugeData.getValue(0, 1);  // Get the current value
-
-        // // Format the gauge data
-        // var formatter = new google.visualization.NumberFormat({pattern: '# ### K'});
-        // formatter.format(this.gaugeData, 1);  // Apply formatter to second column
-
-        const options = {
-            width: '100%', 
-            height: '100%', 
-            redFrom: 0,  // Start red section from 0
-            redTo: currentValue,  // End red section at current value
-            yellowFrom:currentValue, 
-            yellowTo: totalPolyCount,
-            minorTicks: 5,
-            max: totalPolyCount,
-        };
-
-        this.gauge.draw(this.gaugeData, options);
-        console.log('---TEST Gauge drawn'); 
-    }
-
-    updatePanel() {
-        // Wait for dataTablePromise to resolve before calling drawTable
-        this.extension.dataTablePromise.then(() => {
-            this.drawTable();
-            // Define the gauge data and draw the gauge initially
-            this.defineGaugeData();
-            this.drawGauge();
-            // Add 'select' event listener
-            google.visualization.events.addListener(this.table, 'select', () => {
-                console.log("select fired");
-
-                // Get the selected row
-                const selection = this.table.getSelection();
-                if (selection.length === 0) return;  // No row is selected
-
-                // Get the Polycount value of the selected row
-                const row = selection[0].row;
-                const polycount = this.extension.googleDataTable.getValue(row, 2);  // Assuming Polycount is the third column
-                console.log('---TEST polycount', polycount);
-                console.log('---TEST this.gaugeData', this.gaugeData);
-
-                // Update the gauge data
-                this.gaugeData.setValue(0, 1, polycount);
-                console.log('---TEST SET this.gaugeData', this.gaugeData);
-
-                // this.updateGauge();  // Update the gauge data based on the selected row
-                this.drawGauge();  // Redraw the gauge
-            });
         });
 
-        // this.drawGauge();
-    } 
+        // console.log(" createTable Columns", this.columns);
+
+        // Create the Tabulator instance
+        this.table = new Tabulator(this.tableDiv, {
+            layout: 'fitColumns',
+            columns: this.columns,
+            // groupBy: DATAGRID_CONFIG.groupBy,
+            // rowClick: (e, row) => DATAGRID_CONFIG.onRowClick(row.getData(), this.extension.viewer)
+        });
+
+        // Add rows to the table
+        this.table.setData(this.data.slice(1));  // Exclude the first item (headers)
+    }
+
+    drawColumnFilter() {
+        // Create a select element
+        const select = document.createElement('select');
+        select.multiple = true; // Allow multiple selections
+
+        // Populate the select element with options
+        this.columns.forEach((column, i) => {
+            const columnLabel = column.title;
+            // // Skip the "Name" and "dbId" columns
+            // if (columnLabel === 'Name' || columnLabel === 'dbId') {
+            //     return;
+            // }
+            const option = document.createElement('option');
+            option.value = i;
+            option.text = columnLabel;
+            select.appendChild(option);
+        });
+
+        // Append the select element to the columnFilterDiv
+        this.columnFilterDiv.appendChild(select);
+
+        // Initialize Select2 on the select element
+        $(select).select2({
+            width: '80%' // Set the width to 80%
+        });
+
+        // Add an event listener to handle changes
+        $(select).on("change", () => {
+            // console.log('Select changed');
+            let selectedColumns = $(select).select2('data');
+            // console.log('Selected items:', selectedColumns);
+
+            // If the user cleared the selection, set selectedColumns to all properties
+            if (selectedColumns.length === 0) {
+                selectedColumns = this.columns.map(column => column.title);
+                // console.log('No columns selected', selectedColumns);
+            } else {
+                // Store the selected column texts in an instance variable
+                selectedColumns = selectedColumns.map(item => item.text);
+            }
+            // console.log('Selected columns:', selectedColumns);
+
+            // Filter this.columns to include only the selected columns
+            const filteredColumns = this.columns.filter(column => selectedColumns.includes(column.title));
+
+            // Update the columns in the table
+            this.table.setColumns(filteredColumns);
+
+            // Update the DataView and redraw the table
+            // this.updatePanel();
+            // console.log('Panel updated FROM FILTER');
+        });
+    }
+
+    drawValueFilter(columnKey) {
+        // Create a select element
+        const select = document.createElement('select');
+        select.multiple = true; // Allow multiple selections
+
+        console.log(" drawValueFilter Data", this.data);
+
+        // Populate the select element with options
+        this.data.slice(1).forEach((item) => { // Start from the second item
+            if (item[columnKey]) {
+                const option = document.createElement('option');
+                option.value = item[columnKey];
+                option.text = item[columnKey];
+                select.appendChild(option);
+            }
+        });
+
+        // Append the select element to the valueFilterDiv
+        this.valueFilterValueDiv.appendChild(select);
+
+        // Initialize Select2 on the select element
+        $(select).select2({
+            width: '80%' // Set the width to 80%
+        });
+
+        // Add an event listener to handle changes
+        $(select).on("change", () => {
+            console.log('Select changed');
+            const selectedValues = $(select).select2('data');
+            console.log('Selected items:', selectedValues.map(item => item.text));
+
+            // Store the selected values in an instance variable
+            this.selectedValues = selectedValues.map(item => item.text);
+            console.log('Selected values:', this.selectedValues);
+
+            // Set a filter on the table to only show rows with selected values in the columnKey column
+            this.table.setFilter(columnKey, "in", this.selectedValues);
+        });
+    }
+
+    drawColumnKeyFilter() {
+        // Create a select element
+        const select = document.createElement('select');
+
+        // Populate the select element with options
+        this.columns.forEach((column, i) => {
+            const columnLabel = column.title;
+            const option = document.createElement('option');
+            option.value = i;
+            option.text = columnLabel;
+            select.appendChild(option);
+        });
+
+        // Append the select element to the valueFilterDiv
+        this.valueFilterColumnDiv.appendChild(select);
+
+        // Initialize Select2 on the select element
+        $(select).select2({
+            width: '80%' // Set the width to 80%
+        });
+
+        // Add an event listener to handle changes
+        $(select).on("change", () => {
+            // Get the selected column
+            const selectedColumn = $(select).select2('data')[0].text;
+            console.log('Selected column:', selectedColumn);
+    
+            // Clear the valueFilterDiv
+            this.valueFilterValueDiv.innerHTML = '';
+    
+            // Draw the value filter for the selected column
+            this.drawValueFilter(selectedColumn);
+        });
+    }
+
+
+    updatePanel () {
+       
+    }
+
 }

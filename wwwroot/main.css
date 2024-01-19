@@ -66,7 +66,7 @@ body, html {
     min-width: 2em;
 } 
 
-.select2-container {
+/* .select2-container {
     height: 30px !important;
     padding: auto !important;
 }
@@ -76,11 +76,11 @@ body, html {
     min-height: 30px !important;
     max-height: 30px !important;
     overflow: hidden !important;
-}
+} */
 
 .select2-selection__choice {
     color: black !important;
-    margin: auto 3px !important;
+    /* margin: auto 3px !important; */
 }
 
 #notificationContainer {
@@ -112,4 +112,9 @@ body, html {
 .googleTableRows {
     color: black;
     font-family: ArtifaktElement;
+}
+
+.google-visualization-controls-categoryfilter {
+    color: black;
+    /* color: gr */
 }

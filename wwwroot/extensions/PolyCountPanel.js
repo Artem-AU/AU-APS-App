@@ -17,12 +17,12 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.title = this.createTitleBar(this.titleLabel || this.container.id);
         this.initializeMoveHandlers(this.title);
         this.container.appendChild(this.title);
-        this.content = document.createElement('div');
-        this.container.appendChild(this.content);
+        this.dashboardDiv = document.createElement('div');
+        this.container.appendChild(this.dashboardDiv);
         let titleHeight = this.title.offsetHeight;
-        this.content.style.height = `calc(100% - ${titleHeight}px)`;
-        this.content.style.display = 'flex';
-        this.content.style.flexDirection = 'row';
+        this.dashboardDiv.style.height = `calc(100% - ${titleHeight}px)`;
+        this.dashboardDiv.style.display = 'flex';
+        this.dashboardDiv.style.flexDirection = 'row';
 
         this.tableDiv = document.createElement('div');
         this.tableDiv.id = 'chart_div';
@@ -30,7 +30,7 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.tableDiv.style.backgroundColor = 'red';
         this.tableDiv.style.height = '250px';  
         this.tableDiv.style.flex = '2.5';
-        this.content.appendChild(this.tableDiv);
+        this.dashboardDiv.appendChild(this.tableDiv);
 
         this.gaugeDiv = document.createElement('div');
         this.gaugeDiv.id = 'gauge_div';
@@ -41,7 +41,7 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.gaugeDiv.style.display = 'flex';
         this.gaugeDiv.style.justifyContent = 'center';
         this.gaugeDiv.style.alignItems = 'center';
-        this.content.appendChild(this.gaugeDiv);
+        this.dashboardDiv.appendChild(this.gaugeDiv);
     }
 
     defineGaugeData() {
