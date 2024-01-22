@@ -4,10 +4,6 @@ import { TestPanel } from './TestPanel.js';
 class TestExtension extends BaseExtension {
     constructor(viewer, options) {
         super(viewer, options);
-
-        // Load the Google Charts library and set a callback to be executed once it's loaded
-        google.charts.load('current', {'packages':['table', 'controls']});
-        google.charts.setOnLoadCallback(() => this.isGoogleChartsLoaded = true);
     }
 
     load() {
@@ -31,102 +27,87 @@ class TestExtension extends BaseExtension {
         return true;
     }
 
+
     onToolbarCreated () {
         this._panel = new TestPanel(this, 'test-panel', 'Test Report', { x: 50, y: 100});
         this._button = this.createToolbarButton('test-button', 'https://cdn0.iconfinder.com/data/icons/phosphor-regular-vol-4/256/test-tube-64.png', 'Test', "red");
         this._button.onClick = () => {
             this._panel.setVisible(!this._panel.isVisible());
             this._button.setState(this._panel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
-            if (this.isGoogleChartsLoaded && this._panel.isVisible() && this.viewer.model) {
+            if (this._panel.isVisible() && this.viewer.model) { // Combine all conditions
                 console.log("Should draw dashboard ");
-    
-                // Update the panel
+
+                // Create the new elements
                 this._panel.createTable();
-                console.log("Panel updated FROM BUTTON");
-
-                // Draw the column filter only if it hasn't been drawn yet
-                if (!this._panel.columnFilterDrawn) {
-                    console.log("Should draw column filter");
-                    this._panel.drawColumnFilter();
-                    // this._panel.drawValueFilter("Item/Name");
-                    this._panel.columnFilterDrawn = true;
-                }
-
-                // Draw the column filter only if it hasn't been drawn yet
-                if (!this._panel.columnKeyFilterDrawn) {
-                    console.log("Should draw column filter");
-                    // this._panel.drawColumnFilter();
-                    this._panel.drawColumnKeyFilter();
-                    this._panel.columnKeyFilterDrawn = true;
-                }
-
-                // Draw the column filter only if it hasn't been drawn yet
-                if (!this._panel.valueFilterDrawn) {
-                    console.log("Should draw column filter");
-                    // this._panel.drawColumnFilter();
-                    this._panel.drawValueFilter("Item/Name");
-                    this._panel.valueFilterDrawn = true;
-                }
-    
+                this._panel.createColumnSelector();
+                this._panel.createToggle();
             }
         };
     }
 
-    async onModelLoaded(model) { 
-        super.onModelLoaded(model);
+    async onModelLoaded(model) {
+        this.tableData = await this.createData();
+    }
 
-        const targetNodes = await this.findTargetNodes(model);  
-
-        // Get the property set for the target nodes
+    async createData() {
+        const targetNodes = await this.findTargetNodes(this.viewer.model);
+        // Get the property set for the dbIds
         const propertySet = await this.viewer.model.getPropertySetAsync(targetNodes);
 
-        this.dataTableHeaders = [];
+        // Step 1: Create an empty array to hold the rows of the table
+        let rows = [];
 
-        // Add a header for each key in the map
-        Object.keys(propertySet.map).forEach(key => {
-            if (!key.startsWith('_')) {
-                this.dataTableHeaders.push(key);
-            }
+        // Step 2: Create column definitions
+        let columns = Object.keys(propertySet.map).map(key => {
+            return {title: key, field: key};
         });
 
-        // Create a new map with 'dbId' as the key
-        const flippedPropertySet = {};
-        for (const [key, values] of Object.entries(propertySet.map)) {
-            for (const value of values) {
-                if (!flippedPropertySet[value.dbId]) {
-                    flippedPropertySet[value.dbId] = {};
+        // Step 3 and 4: Create rows
+        for (let key in propertySet.map) {
+            propertySet.map[key].forEach(item => {
+                // Find the row for this dbId, or create a new one if it doesn't exist
+                let row = rows.find(r => r.dbId === item.dbId);
+                if (!row) {
+                    row = {dbId: item.dbId};
+                    rows.push(row);
                 }
-                flippedPropertySet[value.dbId][key] = value.displayValue;
-            }
-        }
 
-        // Create an array to hold the rows
-        this.dataTable = [this.dataTableHeaders];
-
-        // Iterate over each key-value pair in the flippedPropertySet
-        for (const [dbId, values] of Object.entries(flippedPropertySet)) {
-            // Create a new row object with dbId as the first property
-            var row = {dbId: parseInt(dbId)};
-            Object.keys(propertySet.map).forEach(key => {
-                if (!key.startsWith('_')) {
-                    // Add the corresponding value from the flippedPropertySet to the row
-                    var displayValue = values[key] || '';
-                    row[key] = String(displayValue);  // Convert the displayValue to a string
-                }
+                // Add the displayValue to the row
+                row[key] = item.displayValue;
             });
-
-            // Add the row to the rows array
-            this.dataTable.push(row);
         }
 
-        console.log('---Data:', this.dataTable);
+        // Create the data table object
+        let data = {
+            columns: columns,
+            rows: rows
+        };
+
+        return data;
     }
 
-    // Add a method to get the googleDataTable
-    getDataTable() {
-        return this.dataTable;
+    getTableData() {
+        return this.tableData;
     }
 
+    async onSelectionChanged(model, dbids) {
+        // Call the parent method
+        super.onSelectionChanged(model, dbids);
+
+        console.log('---Selection has changed', dbids);
+
+        // Log the state of the toggle
+        let isToggleOn = this._panel.settingsToggleDiv.classList.contains('on');
+        console.log('---Toggle state', isToggleOn);
+
+        // If the toggle is on and there are selected dbIds, filter the table to only show rows with these dbIds
+        if (isToggleOn && dbids.length > 0) {
+            this._panel.table.setFilter("dbId", "in", dbids);
+        } else {
+            // If the toggle is off or there are no selected dbIds, clear the filter
+            this._panel.table.clearFilter();
+        }
+    }
     
 }
 

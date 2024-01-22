@@ -143,3 +143,7 @@ label {
     color: black;
     /* color: gr */
 }
+
+#toggle_div.on {
+    background-color: green;
+}
