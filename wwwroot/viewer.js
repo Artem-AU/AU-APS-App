@@ -7,7 +7,7 @@ import './extensions/ReconstructPropsExtension.js';
 import './extensions/BulkPropsExtension.js';
 import './extensions/SearchExtension.js';
 import './extensions/PolyCountExtension.js';
-import './extensions/TestExtension.js';
+import './extensions/BulkPropertiesExtension.js';
 
 
 
@@ -37,10 +37,11 @@ export function initViewer(container) {
                     'HistogramExtension',
                     // 'DataGridExtension',
                     // 'ReconstructPropsExtension',
-                    'BulkPropsExtension',
+                    'BulkPropertiesExtension',
                     'SearchExtension',
                     'PolyCountExtension',
-                    'TestExtension'
+                    // 'TestExtension'
+                    "BulkPropsExtension"
                 ]
             };
             const viewer = new Autodesk.Viewing.GuiViewer3D(container, config);

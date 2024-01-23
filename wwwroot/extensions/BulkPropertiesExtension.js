@@ -1,14 +1,14 @@
 import { BaseExtension } from './BaseExtension.js';
-import { TestPanel } from './TestPanel.js';
+import { BulkPropertiesPanel } from './BulkPropertiesPanel.js';
 
-class TestExtension extends BaseExtension {
+class BulkPropertiesExtension extends BaseExtension {
     constructor(viewer, options) {
         super(viewer, options);
     }
 
     load() {
         super.load();
-        console.log('TestExtension loaded.');
+        console.log('Bulk Properties Extension loaded.');
         return true;
     }
 
@@ -23,14 +23,14 @@ class TestExtension extends BaseExtension {
             this._panel.uninitialize();
             this._panel = null;
         }
-        console.log('TestExtension unloaded.');
+        console.log('Bulk Properties Extension unloaded.');
         return true;
     }
 
 
     onToolbarCreated () {
-        this._panel = new TestPanel(this, 'test-panel', 'Test Report', { x: 50, y: 100});
-        this._button = this.createToolbarButton('test-button', 'https://cdn0.iconfinder.com/data/icons/phosphor-regular-vol-4/256/test-tube-64.png', 'Test', "red");
+        this._panel = new BulkPropertiesPanel(this, 'bulkProperties-panel', 'Bulk Properties Report', { x: 50, y: 100});
+        this._button = this.createToolbarButton('bulkProperties-button', 'https://cdn0.iconfinder.com/data/icons/phosphor-regular-vol-4/256/test-tube-64.png', 'Bulk Properties', "red");
         this._button.onClick = () => {
             this._panel.setVisible(!this._panel.isVisible());
             this._button.setState(this._panel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
@@ -53,13 +53,17 @@ class TestExtension extends BaseExtension {
         const targetNodes = await this.findTargetNodes(this.viewer.model);
         // Get the property set for the dbIds
         const propertySet = await this.viewer.model.getPropertySetAsync(targetNodes);
+        console.log('---Property set:', propertySet);
 
         // Step 1: Create an empty array to hold the rows of the table
         let rows = [];
 
         // Step 2: Create column definitions
         let columns = Object.keys(propertySet.map).map(key => {
-            return {title: key, field: key};
+            let title = key.replace('__category__/Category', 'Category')
+                           .replace('__internalref__/Sub Family', 'Sub Family')
+                           .replace('__internalref__/Level', 'Level');
+            return {title: title, field: key};
         });
 
         // Step 3 and 4: Create rows
@@ -113,4 +117,4 @@ class TestExtension extends BaseExtension {
 
 
 
-Autodesk.Viewing.theExtensionManager.registerExtension('TestExtension', TestExtension);
+Autodesk.Viewing.theExtensionManager.registerExtension('BulkPropertiesExtension', BulkPropertiesExtension);
