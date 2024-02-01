@@ -37,6 +37,21 @@ class LoggerExtension extends BaseExtension {
         super.onIsolationChanged(model, dbids);
         console.log('Isolation has changed', dbids);
     }
+
+    // onExtensionLoaded(extensionId) {
+    //     // console.log('onExtensionLoaded:', extensionId);
+    //     if (extensionId === 'Autodesk.Viewing.SceneBuilder') {
+    //         const sceneBuilderExtension = this.viewer.getExtension('Autodesk.Viewing.SceneBuilder');
+    //         // console.log('sceneBuilderExtension:', sceneBuilderExtension);
+    //         if (sceneBuilderExtension) {
+    //             sceneBuilderExtension.addNewModel({ conserveMemory: true, createWireFrame: false }).then((modelBuilder) => {
+    //                 this.modelBuilder = modelBuilder;
+    //                 console.log('modelBuilder:', modelBuilder);
+    //                 // Now you can use modelBuilder to add custom geometry...
+    //             });
+    //         }
+    //     }
+    // }
 }
 
 Autodesk.Viewing.theExtensionManager.registerExtension('LoggerExtension', LoggerExtension);

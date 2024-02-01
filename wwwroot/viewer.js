@@ -7,6 +7,7 @@ import './extensions/ReconstructPropsExtension.js';
 import './extensions/SearchExtension.js';
 import './extensions/PolyCountExtension.js';
 import './extensions/BulkPropertiesExtension.js';
+import './extensions/SceneBuilderExtension.js';
 
 
 
@@ -30,6 +31,7 @@ export function initViewer(container) {
             const config = {
                 extensions: [
                     'Autodesk.DocumentBrowser',
+                    // "Autodesk.Viewing.SceneBuilder",   THIS CREATES ERRORS WITH BASE EXTENSION READING model. I ASSUME THE MULTIPLE MODELS CREATED, INVESTIGATE
                     'Autodesk.Explode',
                     'LoggerExtension',
                     // 'SummaryExtension',
@@ -39,7 +41,8 @@ export function initViewer(container) {
                     'BulkPropertiesExtension',
                     'SearchExtension',
                     'PolyCountExtension',
-                    // 'TestExtension'
+                    // 'TestExtension',
+                    // "SceneBuilderExtension",
                 ]
             };
             const viewer = new Autodesk.Viewing.GuiViewer3D(container, config);

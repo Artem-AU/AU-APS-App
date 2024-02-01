@@ -112,7 +112,7 @@ class BulkPropertiesExtension extends BaseExtension {
             this._panel.table.setFilter("dbId", "in", dbids);
         } else {
             // If the toggle is off or there are no selected dbIds, clear the filter
-            this._panel.table.clearFilter();
+            this._panel.isVisible() && this._panel.table.clearFilter();
         }
     }
     

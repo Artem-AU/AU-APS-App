@@ -5,6 +5,7 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
         this._onSelectionChanged = (ev) => this.onSelectionChanged(ev.model, ev.dbIdArray);
         this._onIsolationChanged = (ev) => this.onIsolationChanged(ev.model, ev.nodeIdArray);
         this._onGeometryLoaded = (ev) => this.onGeometryLoaded(ev.model);
+        this._onExtensionLoaded = (ev) => this.onExtensionLoaded(ev.extensionId);
         this.ifcTypeExclude = new Set(['File', 'Representation', 'Line', 'Curve',  'Area', 'Boolean', 'Geometry', 'Composite', 'Mapped', 'Site', 'Project', 'Building', 'Storey'].map(v => v.toLowerCase()));
 
     }
@@ -14,6 +15,7 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
         this.viewer.addEventListener(Autodesk.Viewing.SELECTION_CHANGED_EVENT, this._onSelectionChanged);
         this.viewer.addEventListener(Autodesk.Viewing.ISOLATE_EVENT, this._onIsolationChanged);
         this.viewer.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, this._onGeometryLoaded);
+        this.viewer.addEventListener(Autodesk.Viewing.EXTENSION_LOADED_EVENT, this._onExtensionLoaded);
         return true;
     }
 
@@ -22,6 +24,7 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
         this.viewer.removeEventListener(Autodesk.Viewing.SELECTION_CHANGED_EVENT, this._onSelectionChanged);
         this.viewer.removeEventListener(Autodesk.Viewing.ISOLATE_EVENT, this._onIsolationChanged);
         this.viewer.removeEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, this._onGeometryLoaded);
+        this.viewer.removeEventListener(Autodesk.Viewing.EXTENSION_LOADED_EVENT, this._onExtensionLoaded);
         return true;
     }
     
@@ -33,7 +36,10 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
 
     onGeometryLoaded(model) {}
 
+    onExtensionLoaded(extensionId) {}
+
     getFileInfo(model, property) {
+        // console.log('---model isSceneBuilderModel:', model.isSceneBuilder());
         const doc = model.getDocumentNode().getDocument();
         const data = doc.getRoot().data.children[0];
         return data.hasOwnProperty(property) ? data[property] : null;
