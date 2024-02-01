@@ -6,9 +6,13 @@ class BulkPropertiesExtension extends BaseExtension {
         super(viewer, options);
     }
 
-    load() {
+    async load() {
         super.load();
-        console.log('Bulk Properties Extension loaded.');
+        await Promise.all([
+            this.loadScript('https://unpkg.com/tabulator-tables@4.9.3/dist/js/tabulator.min.js', 'Tabulator'),
+            this.loadStylesheet('https://unpkg.com/tabulator-tables@4.9.3/dist/css/tabulator.min.css')
+        ]);
+        console.log('BulkPropsExtension loaded.');
         return true;
     }
 
@@ -27,10 +31,9 @@ class BulkPropertiesExtension extends BaseExtension {
         return true;
     }
 
-
     onToolbarCreated () {
         this._panel = new BulkPropertiesPanel(this, 'bulkProperties-panel', 'Bulk Properties Report', { x: 50, y: 100});
-        this._button = this.createToolbarButton('bulkProperties-button', 'https://cdn0.iconfinder.com/data/icons/phosphor-regular-vol-4/256/test-tube-64.png', 'Bulk Properties', "red");
+        this._button = this.createToolbarButton('bulkProperties-button', 'https://cdn0.iconfinder.com/data/icons/infographic-element-8/512/26_Diagram-64.png', 'Bulk Properties', "lightgreen");
         this._button.onClick = () => {
             this._panel.setVisible(!this._panel.isVisible());
             this._button.setState(this._panel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
