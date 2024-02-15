@@ -8,6 +8,7 @@ import './extensions/SearchExtension.js';
 import './extensions/PolyCountExtension.js';
 import './extensions/BulkPropertiesExtension.js';
 import './extensions/SceneBuilderExtension.js';
+import './extensions/TestExtension.js';
 
 
 
@@ -27,49 +28,52 @@ async function getAccessToken(callback) {
 
 export function initViewer(container) {
     return new Promise(function (resolve, reject) {
-        Autodesk.Viewing.Initializer({ getAccessToken }, function () {
-            const config = {
-                extensions: [
-                    'Autodesk.DocumentBrowser',
-                    // "Autodesk.Viewing.SceneBuilder",   THIS CREATES ERRORS WITH BASE EXTENSION READING model. I ASSUME THE MULTIPLE MODELS CREATED, INVESTIGATE
-                    'Autodesk.Explode',
-                    'LoggerExtension',
-                    // 'SummaryExtension',
-                    'HistogramExtension',
-                    // 'DataGridExtension',
-                    // 'ReconstructPropsExtension',
-                    'BulkPropertiesExtension',
-                    'SearchExtension',
-                    'PolyCountExtension',
-                    // 'TestExtension',
-                    // "SceneBuilderExtension",
-                ]
+        Autodesk.Viewing.Initializer({ getAccessToken }, async function () {
+            const options = {
+                viewerConfig: {
+                    extensions: [
+                        'Autodesk.DocumentBrowser',
+                        // "Autodesk.Viewing.SceneBuilder",   THIS CREATES ERRORS WITH BASE EXTENSION READING model. I ASSUME THE MULTIPLE MODELS CREATED, INVESTIGATE
+                        'Autodesk.Explode',
+                        'LoggerExtension',
+                        // 'SummaryExtension',
+                        // 'HistogramExtension',
+                        // 'DataGridExtension',
+                        // 'ReconstructPropsExtension',
+                        'BulkPropertiesExtension',
+                        // 'SearchExtension',
+                        // 'PolyCountExtension',
+                        // 'TestExtension',
+                        // "SceneBuilderExtension",
+                    ]
+                }
             };
-            const viewer = new Autodesk.Viewing.GuiViewer3D(container, config);
-            viewer.start();
-            viewer.setTheme('dark-theme');
 
-            resolve(viewer);
+            // Initialize the AggregatedView
+            const aggregatedView = new Autodesk.Viewing.AggregatedView();
+            console.log('---viewer.js initViewer Viewer:', aggregatedView);
+            await aggregatedView.init(container, options);
+            // viewer.setTheme('dark-theme');
+
+            resolve(aggregatedView);
         });
     });
 }
 
-export function loadModel(viewer, urn) {
+export function loadModel(aggregatedView, urn) {
+    // console.log('---viewer.js loadModel aggregatedView:', aggregatedView);
+    // console.log('---viewer.js loadModel urn:', urn);
     return new Promise(function (resolve, reject) {
         function onDocumentLoadSuccess(doc) {
-            // console.log('Loaded Forge model:', doc);
-            const data = doc.getRoot().data.children[0];
-            const fileType = data.inputFileType;
-            // console.log('---fileType:', fileType);
-
-            if (fileType !== 'rvt') {
-                viewer.setSelectionMode(1);
-            } else {
-                // console.log('---file extension:', fileExtension);
-                viewer.setSelectionMode(0);
-            }
-
-            resolve(viewer.loadDocumentNode(doc, doc.getRoot().getDefaultGeometry()));
+            doc.downloadAecModelData(() => {
+                const bubbles = doc.getRoot().search({type:'geometry', role: '3d'});
+                const bubble = bubbles[0];
+                if (!bubble) {
+                    reject(new Error('No 3D geometry found in document'));
+                } else {
+                    resolve(bubble);
+                }
+            });
         }
         function onDocumentLoadFailure(code, message, errors) {
             reject({ code, message, errors });

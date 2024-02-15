@@ -6,31 +6,60 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
         this._onIsolationChanged = (ev) => this.onIsolationChanged(ev.model, ev.nodeIdArray);
         this._onGeometryLoaded = (ev) => this.onGeometryLoaded(ev.model);
         this._onExtensionLoaded = (ev) => this.onExtensionLoaded(ev.extensionId);
-        this.ifcTypeExclude = new Set(['File', 'Representation', 'Line', 'Curve',  'Area', 'Boolean', 'Geometry', 'Composite', 'Mapped', 'Site', 'Project', 'Building', 'Storey'].map(v => v.toLowerCase()));
+        this._onModelUnloaded = (ev) => this.onModelUnloaded(ev.model);
+        this.targetNodesMap = new Map(); // Initialize targetNodesMap after calling super
 
+        // this.ifcTypeExclude = new Set(['File', 'Representation', 'Line', 'Curve',  'Area', 'Boolean', 'Geometry', 'Composite', 'Mapped', 'Site', 'Project', 'Building', 'Storey'].map(v => v.toLowerCase()));
+        // this.totalModels = 0; // Set this to the total number of models you're loading
+        // this.loadedModels = 0;
     }
 
     load() {
         this.viewer.addEventListener(Autodesk.Viewing.OBJECT_TREE_CREATED_EVENT, this._onObjectTreeCreated);
-        this.viewer.addEventListener(Autodesk.Viewing.SELECTION_CHANGED_EVENT, this._onSelectionChanged);
+        this.viewer.addEventListener(Autodesk.Viewing.AGGREGATE_SELECTION_CHANGED_EVENT, this._onSelectionChanged);
         this.viewer.addEventListener(Autodesk.Viewing.ISOLATE_EVENT, this._onIsolationChanged);
         this.viewer.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, this._onGeometryLoaded);
         this.viewer.addEventListener(Autodesk.Viewing.EXTENSION_LOADED_EVENT, this._onExtensionLoaded);
+        this.viewer.addEventListener(Autodesk.Viewing.MODEL_UNLOADED_EVENT, this._onModelUnloaded);
         return true;
     }
 
     unload() {
         this.viewer.removeEventListener(Autodesk.Viewing.OBJECT_TREE_CREATED_EVENT, this._onObjectTreeCreated);
-        this.viewer.removeEventListener(Autodesk.Viewing.SELECTION_CHANGED_EVENT, this._onSelectionChanged);
+        this.viewer.removeEventListener(Autodesk.Viewing.AGGREGATE_SELECTION_CHANGED_EVENT, this._onSelectionChanged);
         this.viewer.removeEventListener(Autodesk.Viewing.ISOLATE_EVENT, this._onIsolationChanged);
         this.viewer.removeEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, this._onGeometryLoaded);
         this.viewer.removeEventListener(Autodesk.Viewing.EXTENSION_LOADED_EVENT, this._onExtensionLoaded);
+        this.viewer.removeEventListener(Autodesk.Viewing.MODEL_UNLOADED_EVENT, this._onModelUnloaded);
         return true;
     }
     
-    onModelLoaded(model) {}
+    async onModelLoaded(model) {
+        const targetNodes = await this.findTargetNodes(model);
+        this.targetNodesMap.set(model, targetNodes); // Store targetNodes in the Map
+    }
 
-    onSelectionChanged(model, dbids) {}
+    onModelUnloaded(model) {
+        const allModels = this.viewer.getAllModels();
+        // Iterate over the keys of targetNodesMap
+        for (let key of this.targetNodesMap.keys()) {
+            // If the key is not in modelNames, delete it from targetNodesMap
+            if (!allModels.includes(key)) {
+                console.log('Model unloaded and target nodes removed:', key);
+                this.targetNodesMap.delete(key);
+            }
+        }
+    }
+
+    onSelectionChanged() {
+        const aggregateSelection = this.viewer.getAggregateSelection();
+        aggregateSelection.forEach(({ model, selection }) => {
+            const modelName = this.getFileInfo(model, 'name');
+            console.log('Base onSelectionChanged Model:', model);
+            console.log('Base onSelectionChanged Model name:', modelName);
+            console.log('Base onSelectionChanged Selected dbIds:', selection);
+        });
+    }
 
     onIsolationChanged(model, dbids) {}
 
@@ -39,70 +68,58 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
     onExtensionLoaded(extensionId) {}
 
     getFileInfo(model, property) {
-        // console.log('---model isSceneBuilderModel:', model.isSceneBuilder());
         const doc = model.getDocumentNode().getDocument();
+        // console.log('Document node:', doc);
         const data = doc.getRoot().data.children[0];
         return data.hasOwnProperty(property) ? data[property] : null;
+    }    
+
+    getAllDbIds(model) {
+        let instanceTree = model.getData().instanceTree;
+        let allDbIds = Object.keys(instanceTree.nodeAccess.dbIdToIndex).map(Number);
+        return allDbIds;
     }
 
-    getAllDbIds() {
-        return new Promise((resolve, reject) => {
-            this.viewer.model.getObjectTree(tree => {
-                let allDbIds = [];
-                tree.enumNodeChildren(tree.getRootId(), function(dbId) {
-                    allDbIds.push(dbId);
-                }, true);
-                resolve(allDbIds);
-            }, function(err) {
-                console.error("Error querying the Object Tree:", err);
-                reject(err);
-            });
-        });
-    }
+    async findIfcNodes(model) {
+        let allNodes = this.getAllDbIds(model);        
+        let propSet = await model.getPropertySetAsync(allNodes, {});
+        const itemTypePropSet = propSet.map['Item/Type'];        
+        const ifcTypeExclude = new Set(['File', 'Representation', 'Line', 'Curve',  'Area', 'Boolean', 'Geometry', 'Composite', 'Mapped', 'Site', 'Project', 'Storey'].map(v => v.toLowerCase()));
 
-    async findIfcNodes(targetNodes = null, options = {}) {
-        // console.log('---findIfcNodes');
-        if (targetNodes === null) {
-            targetNodes = await this.getAllDbIds();
+        if (itemTypePropSet) {
+            let dbIds = itemTypePropSet
+                .filter(item => {
+                    let lowerCaseDisplayValue = item.displayValue.toLowerCase();
+                    return !ifcTypeExclude.some(keyword => lowerCaseDisplayValue.includes(keyword)) && lowerCaseDisplayValue !== 'ifcbuilding';
+                })
+                .map(item => item.dbId);
+            return dbIds;
+        } else {
+            console.warn('No Item/Type properties found');
+            return [];
         }
-        return new Promise((resolve, reject) => {            
-            this.viewer.model.getPropertyDb().getPropertySet(targetNodes, options, function(results) {
-                if (results.hasOwnProperty('Item/Type')) {
-                    let dbIds = results['Item/Type'].filter(item => !this.ifcTypeExclude.some(keyword => item.displayValue.toLowerCase().includes(keyword.toLowerCase()))).map(item => item.dbId);
-                    resolve(dbIds);
-                } else {
-                    resolve([]);
-                }
-            }.bind(this), function(err) {
-                console.error("Error querying the Property Set:", err);
-                reject(err);
-            });
-        });
     }
 
-    async findNavisNodes(targetNodes = null, options = {}) {
-        // console.log('---findNavisNodes');
-        if (targetNodes === null) {
-            targetNodes = await this.getAllDbIds();
-        }    
-        return new Promise((resolve, reject) => {
-            this.viewer.model.getPropertyDb().getPropertySet(targetNodes, options, (results) => {
-                if (results.hasOwnProperty('Element/Category')) {
-                    let dbIds = results['Element/Category'].filter(item => item.displayValue !== '').map(item => item.dbId);
-                    resolve(dbIds);
-                } else {
-                    resolve([]);
-                }
-            }, (err) => {
-                console.error("Error querying the Property Set:", err);
-                reject(err);
-                throw err;
-            });
-        });
+    async findNavisNodes(model) {
+        let allNodes = this.getAllDbIds(model);        
+        let propSet = await model.getPropertySetAsync(allNodes, {});
+        console.log('---Navisworks propSet:', propSet);
+        const elementCategoryPropSet = propSet.map['Element/Category'];     
+        const itemTypePropSet = propSet.map['Item/Type'];           
+
+        if (elementCategoryPropSet) {
+            let dbIds = elementCategoryPropSet.filter(item => item.displayValue !== '').map(item => item.dbId);
+            return dbIds;
+        } else if (itemTypePropSet) {
+            console.log('---No elementCategoryPropSet, Navisworks itemTypePropSet:', itemTypePropSet);
+            return this.findIfcNodes(model);
+        } else {
+            console.warn('No Element/Category or Item/Type properties found');
+            return [];
+        }
     }
 
     async findRevitNodes(model) {
-        // console.log('---findRevitNodes');
         return new Promise((resolve, reject) => {
             model.getObjectTree((tree) => {
                 let leaves = [];
@@ -123,9 +140,9 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
             case 'rvt':
                 return this.findRevitNodes(model);
             case 'ifc':
-                return this.findIfcNodes();
+                return this.findIfcNodes(model);
             default:
-                return this.findNavisNodes();
+                return this.findNavisNodes(model);
         }
     }
 
