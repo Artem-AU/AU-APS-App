@@ -28,7 +28,7 @@ async function getAccessToken(callback) {
 
 export function initViewer(container) {
     return new Promise(function (resolve, reject) {
-        Autodesk.Viewing.Initializer({ getAccessToken }, async function () {
+        Autodesk.Viewing.Initializer({ env: 'AutodeskProduction', getAccessToken }, async function () {
             const options = {
                 viewerConfig: {
                     extensions: [
