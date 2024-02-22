@@ -74,7 +74,6 @@ async function setupModelSelection(aggregatedView) {
             const selectedModels = Array.from(dropdown.options)
                 .filter(option => option.selected)
                 .map(option => option.value);
-            console.log('---main.js setupModelSelection onchange selectedModels:', selectedModels);
             onModelSelected(aggregatedView, selectedModels); // Pass array of selected models
         };
         // if (dropdown.value) {
@@ -122,7 +121,6 @@ async function setupModelUpload(aggregatedView) {
 }
 
 async function onModelSelected(aggregatedView, urns) {
-    console.log('---main.js onModelSelected aggregatedView.modelItems:', aggregatedView.modelItems);
     if (window.onModelSelectedTimeout) {
         clearTimeout(window.onModelSelectedTimeout);
         delete window.onModelSelectedTimeout;
@@ -134,9 +132,7 @@ async function onModelSelected(aggregatedView, urns) {
             const subParts = parts[0].split(':');
             return subParts[subParts.length - 1];
         });
-        console.log('---main.js onModelSelected existingUrns:', existingUrns);
         const newUrns = urns.filter(urn => !existingUrns.includes(urn));
-        console.log('---main.js onModelSelected newUrns:', newUrns);
 
         // Find redundantUrns and unload them
         const redundantUrns = existingUrns.filter(urn => !urns.includes(urn));
@@ -152,15 +148,12 @@ async function onModelSelected(aggregatedView, urns) {
                 
         // If newUrns is empty, do nothing and return
         if (newUrns.length === 0) {
-            console.log('---main.js onModelSelected newUrns is empty:', newUrns);
             return;
         }
         
-        console.log('---main.js onModelSelected urns:', urns);
 
         const tasks = urns.map(async urn => {
             window.location.hash = urn;
-            console.log('---main.js onModelSelected urn:', urn);
 
             // Check if the URN exists
             const resp = await fetch(`/api/models/${urn}/status`, { method: 'HEAD' });
@@ -192,7 +185,6 @@ async function onModelSelected(aggregatedView, urns) {
             }
         });
         const bubbles = await Promise.all(tasks);
-        console.log('---main.js onModelSelected bubbles:', bubbles);
         aggregatedView.setNodes(bubbles.filter(Boolean));
     } catch (err) {
         alert('Could not load model. See the console for more details.');

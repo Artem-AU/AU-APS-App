@@ -32,13 +32,12 @@ class BulkPropertiesExtension extends BaseExtension {
     }
 
     onToolbarCreated () {
-        this._panel = new BulkPropertiesPanel(this, 'bulkProperties-panel', 'Bulk Properties Report', { x: 50, y: 100});
+        this._panel = new BulkPropertiesPanel(this, 'bulkProperties-panel', 'Bulk Properties Report', { x: 20, y: 50});
         this._button = this.createToolbarButton('bulkProperties-button', 'https://cdn0.iconfinder.com/data/icons/infographic-element-8/512/26_Diagram-64.png', 'Bulk Properties', "lightgreen");
         this._button.onClick = () => {
             this._panel.setVisible(!this._panel.isVisible());
             this._button.setState(this._panel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
             if (this._panel.isVisible() && this.viewer.model) { // Combine all conditions
-                console.log("Should draw dashboard ");
 
                 // Create the new elements
                 this._panel.createTable();
@@ -63,7 +62,6 @@ class BulkPropertiesExtension extends BaseExtension {
     async createAggregatedData() {
         let allData = await Promise.all(
             Array.from(this.targetNodesMap.entries()).map(async ([model, dbIds]) => {
-                console.log('---createAggregatedData model:', this.createData(model, dbIds));
                 return this.createData(model, dbIds);
             })
         );
@@ -80,7 +78,6 @@ class BulkPropertiesExtension extends BaseExtension {
         });
 
         this.tableData = mergedData;
-        console.log('---createAggregatedData data:', this.tableData);
     }
 
     async createData(model, targetNodes) {
@@ -100,13 +97,16 @@ class BulkPropertiesExtension extends BaseExtension {
         const modelName = this.getFileInfo(model, 'name');
         columns.unshift({title: 'Model', field: 'model'});
 
+        // // Add "Model-DbId" column
+        // columns.push({title: 'Model-DbId', field: 'modelDbId'});
+
         // Step 3 and 4: Create rows
         for (let key in propertySet.map) {
             propertySet.map[key].forEach(item => {
                 // Find the row for this dbId, or create a new one if it doesn't exist
                 let row = rows.find(r => r.dbId === item.dbId);
                 if (!row) {
-                    row = {dbId: item.dbId, model: modelName};
+                    row = {dbId: item.dbId, model: modelName, modelDbId: `${modelName}=${item.dbId}`};
                     rows.push(row);
                 }
 
@@ -120,6 +120,7 @@ class BulkPropertiesExtension extends BaseExtension {
             rows: rows
         };
 
+
         return data;
     }
 
@@ -129,19 +130,24 @@ class BulkPropertiesExtension extends BaseExtension {
 
     async onSelectionChanged(model, dbids) {
         // Check if the panel is visible and the toggle is on
-        if (this._panel.isVisible() && this._panel.settingsToggleDiv.classList.contains('on')) {
-            // Call the parent method
-            super.onSelectionChanged(model, dbids);
+        if (this._panel.isVisible() && this._panel.settingsToggleButton.classList.contains('on')) {
+            const aggregateSelection = this.viewer.getAggregateSelection();
 
-            let isToggleOn = this._panel.settingsToggleDiv.classList.contains('on');
-            console.log('---Toggle state', isToggleOn);
+            let isToggleOn = this._panel.settingsToggleButton.classList.contains('on');
 
-            // If the toggle is on and there are selected dbIds, filter the table to only show rows with these dbIds
-            if (isToggleOn && dbids.length > 0) {
-                this._panel.table.setFilter("dbId", "in", dbids);
+            // If the toggle is on and there are selected items in the aggregate selection
+            if (isToggleOn && aggregateSelection.some(selection => selection.selection.length > 0)) {
+                // Create an array of modelDbId strings for each model:dbId pair in the aggregateSelection
+                const modelDbIds = aggregateSelection.flatMap(selection => 
+                    selection.selection.map(dbId => `${this.getFileInfo(selection.model, 'name')}=${dbId}`)
+                );
+
+                // Assign modelDbIds to combinedFilters.selectionFilter
+                this._panel.combinedFilters.selectionFilter = modelDbIds;
             } else {
-                // If the toggle is off or there are no selected dbIds, clear the filter
-                this._panel.table.clearFilter();
+
+                // Also clear the selectionFilter
+                this._panel.combinedFilters.selectionFilter = null;
             }
         }
     }

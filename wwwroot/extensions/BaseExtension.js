@@ -45,21 +45,12 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
         for (let key of this.targetNodesMap.keys()) {
             // If the key is not in modelNames, delete it from targetNodesMap
             if (!allModels.includes(key)) {
-                console.log('Model unloaded and target nodes removed:', key);
                 this.targetNodesMap.delete(key);
             }
         }
     }
 
-    onSelectionChanged() {
-        const aggregateSelection = this.viewer.getAggregateSelection();
-        aggregateSelection.forEach(({ model, selection }) => {
-            const modelName = this.getFileInfo(model, 'name');
-            console.log('Base onSelectionChanged Model:', model);
-            console.log('Base onSelectionChanged Model name:', modelName);
-            console.log('Base onSelectionChanged Selected dbIds:', selection);
-        });
-    }
+    onSelectionChanged() {}
 
     onIsolationChanged(model, dbids) {}
 
@@ -69,7 +60,6 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
 
     getFileInfo(model, property) {
         const doc = model.getDocumentNode().getDocument();
-        // console.log('Document node:', doc);
         const data = doc.getRoot().data.children[0];
         return data.hasOwnProperty(property) ? data[property] : null;
     }    
@@ -103,7 +93,6 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
     async findNavisNodes(model) {
         let allNodes = this.getAllDbIds(model);        
         let propSet = await model.getPropertySetAsync(allNodes, {});
-        console.log('---Navisworks propSet:', propSet);
         const elementCategoryPropSet = propSet.map['Element/Category'];     
         const itemTypePropSet = propSet.map['Item/Type'];           
 
@@ -111,7 +100,6 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
             let dbIds = elementCategoryPropSet.filter(item => item.displayValue !== '').map(item => item.dbId);
             return dbIds;
         } else if (itemTypePropSet) {
-            console.log('---No elementCategoryPropSet, Navisworks itemTypePropSet:', itemTypePropSet);
             return this.findIfcNodes(model);
         } else {
             console.warn('No Element/Category or Item/Type properties found');
