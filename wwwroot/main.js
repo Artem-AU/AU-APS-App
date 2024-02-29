@@ -2,51 +2,6 @@ import { initViewer, loadModel } from './viewer.js';
 
 initViewer(document.getElementById('preview')).then(aggregatedView => {
 
-    // const urn = window.location.hash?.substring(1);
-    // console.log('---main.js initViewer urn:', window.location);
-    // if (!urn) {
-    //     console.error('No URN provided in URL hash');
-    //     return;
-    // }
-
-    // console.log('---main.js aggregatedView is initialized:', aggregatedView);
-    // console.log('---main.js aggregatedView.viewer:', aggregatedView.viewer);
-    
-    // Viewer is initialized, now load the models
-    // const models = [
-    //     'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YXVfdW5pcXVlX2J1Y2tldC9zbWFsbC5pZmM',
-    // "dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YXVfdW5pcXVlX2J1Y2tldC9TVF9iYXNpY19zYW1wbGVfcHJvamVjdC5ud2M"
-    // ];  // replace with your model URNs
-    // const tasks = models.map(urn => loadModel(aggregatedView, urn));
-    // console.log('---main.js initViewer loadModel:', tasks);
-    // Promise.all(tasks)
-    //     .then(bubbles => aggregatedView.setNodes(bubbles))
-    //     .catch(error => console.error('Failed to load models:', error));
-
-    // // Continue with your existing code...
-    // const customProfileSettings = {
-    //     settings: {
-    //         reverseMouseZoomDir: true,
-    //         wheelSetsPivot: true,
-    //         lightPreset: 17, 
-    //     }
-    // };
-    // const customProfile = new Autodesk.Viewing.Profile(customProfileSettings);
-    // const viewModels = aggregatedView.getModels();
-    // console.log('---main.js viewModels:', viewModels);
-    // const urn = window.location.hash?.substring(1);
-
-    // loadModel(aggregatedView, urn)
-    //     .then(bubble => {
-    //         console.log('---main.js init Viewer Model loaded:', urn, aggregatedView.modelItems);
-    //         aggregatedView.setNodes([bubble]);
-    //     })
-    //     .catch(error => console.error('Failed to load model:', error));
-
-
-    
-    // console.log('---main.js initViewer modelItems:', aggregatedView.modelItems());
-
     aggregatedView.setNodes([]);
 
     setupModelSelection(aggregatedView);

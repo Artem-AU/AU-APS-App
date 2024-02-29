@@ -9,9 +9,6 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
         this._onModelUnloaded = (ev) => this.onModelUnloaded(ev.model);
         this.targetNodesMap = new Map(); // Initialize targetNodesMap after calling super
 
-        // this.ifcTypeExclude = new Set(['File', 'Representation', 'Line', 'Curve',  'Area', 'Boolean', 'Geometry', 'Composite', 'Mapped', 'Site', 'Project', 'Building', 'Storey'].map(v => v.toLowerCase()));
-        // this.totalModels = 0; // Set this to the total number of models you're loading
-        // this.loadedModels = 0;
     }
 
     load() {
@@ -149,6 +146,35 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
                 });
             }
         });
+    }
+
+    createDbIdToFragIdMap(model) {
+        // Get the instance tree
+        const instanceTree = model.getData().instanceTree;
+
+        // Get the fragId2dbId array
+        const fragId2dbId = instanceTree.fragList.fragments.fragId2dbId;
+
+        // Initialize the dbIdTofragId object
+        const dbIdTofragId = {};
+
+        // Iterate over the fragId2dbId array
+        for (let fragId = 0; fragId < fragId2dbId.length; fragId++) {
+            const dbId = fragId2dbId[fragId];
+
+            // If the dbId does not exist in the dbIdTofragId object, create a new array for it
+            if (!dbIdTofragId[dbId]) {
+                dbIdTofragId[dbId] = [];
+            }
+
+            // Add the fragId to the array of fragIds for the dbId
+            dbIdTofragId[dbId].push(fragId);
+        }
+
+        // console.log('---PolyCountExtension.js onGeometryLoaded dbIdTofragId:', dbIdTofragId);
+
+        // Return the dbIdTofragId map
+        return dbIdTofragId;
     }
 
     createToolbarButton(buttonId, buttonIconUrl, buttonTooltip, buttonColor) {

@@ -40,9 +40,9 @@ export function initViewer(container) {
                         // 'HistogramExtension',
                         // 'DataGridExtension',
                         // 'ReconstructPropsExtension',
-                        'BulkPropertiesExtension',
+                        // 'BulkPropertiesExtension',
                         // 'SearchExtension',
-                        // 'PolyCountExtension',
+                        'PolyCountExtension',
                         // 'TestExtension',
                         // "SceneBuilderExtension",
                     ]

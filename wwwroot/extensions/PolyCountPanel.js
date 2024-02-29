@@ -44,6 +44,41 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.dashboardDiv.appendChild(this.gaugeDiv);
     }
 
+    defineTableData() {
+        this.tableData = new google.visualization.DataTable();
+        this.tableData.addColumn('string', 'Model');
+        this.tableData.addColumn('string', 'Name');
+        this.tableData.addColumn('number', 'Instances');
+        this.tableData.addColumn('number', 'Polycount');
+
+        for (let item of this.extension.aggregatedData) {
+            for (let [name, data] of Object.entries(item.modelData)) {
+                this.tableData.addRow([item.modelName, name, data.instances, data.polycount]);
+            }
+        }
+    }
+        
+    
+
+    
+
+    drawTable() {
+        this.defineTableData();
+        this.table = new google.visualization.Table(this.tableDiv);
+        this.table.draw(this.tableData, {
+            width: '100%', 
+            height: '100%',
+            alternatingRowStyle: true,
+            cssClassNames: {
+                headerCell: 'googleTableHeader',
+                tableCell: 'googleTableRows'
+            },
+            sortColumn: 3,
+            sortAscending: false 
+        });  
+    }
+
+
     defineGaugeData() {
         this.gaugeData = new google.visualization.DataTable();
         this.gaugeData.addColumn('string', 'Label');
@@ -53,26 +88,15 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
         ]);
     }
 
-    drawTable() {
-        // Use googleDataTable from the extension directly
-        this.table = new google.visualization.Table(this.tableDiv);
-        this.table.draw(this.extension.googleDataTable, {
-            width: '100%', 
-            height: '100%',
-            alternatingRowStyle: true,
-            cssClassNames: {
-                headerCell: 'googleTableHeader',
-                tableCell: 'googleTableRows'
-            },
-            sortColumn: 2,
-            sortAscending: false 
-        });  
-    }
 
     drawGauge() {
         this.gauge = new google.visualization.Gauge(this.gaugeDiv);
 
-        const totalPolyCount = this.extension.totalPolyCount;
+        const totalPolyCount = this.extension.aggregatedData.reduce((total, item) => {
+            console.log('---drawGauge item.modelPolycount:', item.modelPolycount);
+            return total + item.modelPolycount;
+        }, 0);
+
         const currentValue = this.gaugeData.getValue(0, 1);  // Get the current value
 
         const options = {
@@ -89,40 +113,69 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.gauge.draw(this.gaugeData, options);
     }
 
-    updatePanel() {
-        // Wait for dataTablePromise to resolve before calling drawTable
-        this.extension.dataTablePromise.then(() => {
-            this.drawTable();
-            // Define the gauge data and draw the gauge initially
-            this.defineGaugeData();
-            this.drawGauge();
-            // Add 'select' event listener
-            google.visualization.events.addListener(this.table, 'select', () => {
+    drawPanel() {
+        this.drawTable();
+        //Define gauge data and draw the gauge initially
+        this.defineGaugeData();
+        this.drawGauge();  
+        // Add 'select' event listener
+        google.visualization.events.addListener(this.table, 'select', () => {
 
-                // Get the selected row
-                const selection = this.table.getSelection();
-                if (selection.length === 0) return;  // No row is selected
+            // Get the selected row
+            const selection = this.table.getSelection();
+            if (selection.length === 0) return;  // No row is selected
 
-                // Get the Polycount value of the selected row
-                const row = selection[0].row;
-                const polycount = this.extension.googleDataTable.getValue(row, 2);  // Assuming Polycount is the third column
+            // Get the Polycount value of the selected row
+            const row = selection[0].row;
+            const polycount = this.tableData.getValue(row, 3);  // Assuming Polycount is the third column
 
-                // Update the gauge data
-                this.gaugeData.setValue(0, 1, polycount);
+            // Update the gauge data
+            this.gaugeData.setValue(0, 1, polycount);
 
-                // Get the name of the selected item
-                const name = this.extension.googleDataTable.getValue(row, 0);
+            const selectedObjectName = this.tableData.getValue(row, 1);
+            const selectedModelName = this.tableData.getValue(row, 0);
 
-                // Get the dbIds of the selected item
-                const dbIds = this.extension.tableData[name].dbids;
+            // Find the object in this.extension.aggregatedData where modelName equals model
+            const selectedModelData = this.extension.aggregatedData.find(item => item.modelName === selectedModelName);
 
-                // Select the corresponding model elements
-                this.extension.viewer.select(dbIds);
-                this.extension.viewer.isolate(dbIds);
-                this.extension.viewer.fitToView(dbIds);
+            const dbIds = selectedModelData.modelData[selectedObjectName].dbids;
 
-                this.drawGauge();  // Redraw the gauge
-            });
-        });
+            // Initialize model to null
+            let model = null;
+
+            // Iterate over the keys of targetNodesMap
+            for (let [key, value] of this.extension.targetNodesMap.entries()) {
+                // Get the name of the model
+                let name = this.extension.getFileInfo(key, "name");
+
+                // If the name matches the model name, set the model to key
+                if (name === selectedModelName) {
+                    model = key;
+                    break;
+                }
+            }
+
+            // If model is not null, create the selection definition and select the elements
+            if (model) {
+                // Create the selection definition
+                let selectionDef = {
+                    model: model,
+                    ids: [dbIds],
+                    // selectionType: 3  // Replace 1 with the actual selection type
+                };
+
+                // Select the corresponding model elements in the viewer
+                this.extension.viewer.setAggregateSelection([selectionDef], true);
+
+                // Isolate and fit the view to the selected elements
+                // Note: isolate and fitToView methods do not support aggregate selection directly
+                // You may need to iterate over the models and call these methods for each model
+                this.extension.viewer.isolate(dbIds, model);
+                this.extension.viewer.fitToView(dbIds, model);
+            }
+
+            this.drawGauge();  // Redraw the gauge
+        });          
+
     } 
 }

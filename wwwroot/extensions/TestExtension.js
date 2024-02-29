@@ -1,13 +1,14 @@
-import { BaseExtension } from './BaseExtension.js';
-import { TestPanel } from './TestPanel.js';
-import { loadModel } from '../viewer.js';  // Make sure the path is correct
-
+import { BaseExtension } from "./BaseExtension.js";
+import { TestPanel } from "./TestPanel.js";
 
 class TestExtension extends BaseExtension {
     constructor(viewer, options) {
         super(viewer, options);
-        console.log(this.viewer); // This will log the viewer instance
-
+        this._viewer = viewer;
+        this._options = options;
+        // Load the Google Charts library and set a callback to be executed once it's loaded
+        google.charts.load('current', {'packages':['table', "gauge"]});
+        google.charts.setOnLoadCallback(() => this.isGoogleChartsLoaded = true);
     }
 
     load() {
@@ -31,43 +32,85 @@ class TestExtension extends BaseExtension {
         return true;
     }
 
-
-    onToolbarCreated () {
-        this._panel = new TestPanel(this, 'test-panel', 'Test Report', { x: 50, y: 100});
-        this._button = this.createToolbarButton('test-button', 'https://cdn0.iconfinder.com/data/icons/phosphor-regular-vol-4/256/test-tube-64.png', 'Test', "red");
+    onToolbarCreated() {       
+        this._panel = new TestPanel(this, 'dashboard-test-panel', 'PolyCount Report', { x: 50, y: 100});
+        this._button = this.createToolbarButton('dashboard-test-button', 'https://cdn1.iconfinder.com/data/icons/web-con-set-117-line/128/polygons_plane-figure_geometrical_pentagon_hexagon_quadrilateral_side_vertex_polygram_two-dimension-64.png', 'PolyCount report by Category', "lightyellow");
         this._button.onClick = () => {
             this._panel.setVisible(!this._panel.isVisible());
             this._button.setState(this._panel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
             if (this._panel.isVisible() && this.viewer.model) {
-                console.log("Should do something ");
-                console.log('viewer:', this.viewer);
+                this._panel.drawPanel();
 
-                // Viewer is initialized, now load the models
-                // const models = [
-                //     'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YXVfdW5pcXVlX2J1Y2tldC9zbWFsbC5pZmM',
-                // "dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YXVfdW5pcXVlX2J1Y2tldC9TVF9iYXNpY19zYW1wbGVfcHJvamVjdC5ud2M"
-                // ];  // replace with your model URNs
-                // const tasks = models.map(urn => loadModel(this.viewer, urn));
-                // Promise.all(tasks)
-                //     .then(bubbles => {
-                //         bubbles.forEach(bubble => {
-                //             this.viewer.loadDocumentNode(bubble.getDocument(), bubble);
-                //         });
-                //     })
-                //     .catch(error => console.error('Failed to load models:', error));
-    
             }
         };
     }
 
-    async onModelLoaded(model) { 
-        super.onModelLoaded(model);
+    async onModelLoaded(model) {
+        await super.onModelLoaded(model);
+    }
 
-        console.log('this in onModelLoaded:', this);  // Log the this object in onModelLoaded
+    onGeometryLoaded(model) {
+        super.onGeometryLoaded(model);
 
-    }    
+        this.createAggregatedData();
+        if (this._panel.isVisible()) {
+            this._panel.drawPanel();
+        }
+    }
+
+    onModelUnloaded(model) {
+        super.onModelUnloaded(model); 
+
+        this.createAggregatedData();
+        if (this._panel.isVisible()) {
+            this._panel.drawPanel();
+        }
+    }
+
+    createAggregatedData() {
+        this.aggregatedData = [];
+        for (let [model, targetNodes] of this.targetNodesMap.entries()) {
+            const modelName = this.getFileInfo(model, "name");
+            const modelData = this.createData(model, targetNodes);
+            const modelPolycount = model.getData().instanceTree.fragList.geoms.instancePolyCount;
+            this.aggregatedData.push({ modelName, modelData, modelPolycount });
+        }
+    }
+
+    createData(model, targetNodes) {
+        const instanceTree = model.getData().instanceTree;
+        const data = {}
+
+        // Iterate over each dbId
+        for (const dbId of targetNodes) {
+            let dbidPolycount = 0;
+
+            // Get the fragment IDs for each dbId
+            instanceTree.enumNodeFragments(dbId, (fragId) => {
+                const fragPolyCount = instanceTree.fragList.fragments.polygonCounts[fragId];
+                dbidPolycount += fragPolyCount;
+            }, true);
+
+            // Get the node name
+            const nodeName = instanceTree.getNodeName(dbId);
+
+            // Initialize the data for the name if it doesn't exist
+            let cleanName = nodeName.split(/[[\:]/)[0].trim();
+
+            if (!data[cleanName]) {
+                data[cleanName] = { instances: 0, polycount: 0, dbids: []};
+            }
+
+            // Increment the instance count for the name
+            data[cleanName].instances++;
+
+            // Calculate the Name Polycount
+            data[cleanName].polycount += dbidPolycount;
+            data[cleanName].dbids.push(dbId);
+        }
+        return data;
+    }
+
 }
-
-
 
 Autodesk.Viewing.theExtensionManager.registerExtension('TestExtension', TestExtension);
