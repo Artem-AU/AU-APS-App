@@ -1,4 +1,3 @@
-
 export class TestPanel extends Autodesk.Viewing.UI.DockingPanel {
     constructor(extension, id, title, options) {
         super(extension.viewer.container, id, title, options);
@@ -6,176 +5,214 @@ export class TestPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.container.style.right = (options.x || 0) + 'px';
         this.container.style.top = (options.y || 0) + 'px';
         this.container.style.width = (options.width || 900) + 'px';
-        this.container.style.height = (options.height || 300) + 'px';
+        this.container.style.minWidth = '400px';
+        this.container.style.height = (options.height || 600) + 'px';
+        this.container.style.minHeight = '450px';
+        this.container.style.resize = 'auto';
+        this.chartType = options.chartType || 'ColumnChart'; // Default to ColumnChart for Google Charts
+
         // Load the Google Charts library and set a callback to be executed once it's loaded
-        google.charts.load('current', {'packages':['table', "gauge"]});
+        google.charts.load('current', { packages: ['corechart'] });
         google.charts.setOnLoadCallback(() => this.isGoogleChartsLoaded = true);
-        
     }
 
     initialize() {
         this.title = this.createTitleBar(this.titleLabel || this.container.id);
+        this.closer = this.createCloseButton(); 
+        this.initializeCloseHandler(this.closer);
         this.initializeMoveHandlers(this.title);
         this.container.appendChild(this.title);
-        this.dashboardDiv = document.createElement('div');
-        this.container.appendChild(this.dashboardDiv);
+        this.container.appendChild(this.closer);
+        this.content = document.createElement('div');
         let titleHeight = this.title.offsetHeight;
-        this.dashboardDiv.style.height = `calc(100% - ${titleHeight}px)`;
-        this.dashboardDiv.style.display = 'flex';
-        this.dashboardDiv.style.flexDirection = 'row';
-
-        this.tableDiv = document.createElement('div');
-        this.tableDiv.id = 'chart_div';
-        this.tableDiv.textContent = 'Chart Div';
-        this.tableDiv.style.backgroundColor = 'red';
-        this.tableDiv.style.height = '250px';  
-        this.tableDiv.style.flex = '2.5';
-        this.dashboardDiv.appendChild(this.tableDiv);
-
-        this.gaugeDiv = document.createElement('div');
-        this.gaugeDiv.id = 'gauge_div';
-        this.gaugeDiv.textContent = 'Gauge Div';
-        this.gaugeDiv.style.backgroundColor = 'lightsteelblue';
-        this.gaugeDiv.style.height = '250px';
-        this.gaugeDiv.style.flex = '1';
-        this.gaugeDiv.style.display = 'flex';
-        this.gaugeDiv.style.justifyContent = 'center';
-        this.gaugeDiv.style.alignItems = 'center';
-        this.dashboardDiv.appendChild(this.gaugeDiv);
+        this.content.style.height = `calc(100% - ${titleHeight}px)`;
+        this.content.style.width = '100%';
+        this.content.style.backgroundColor = 'white';
+        this.content.innerHTML = `
+            <div class="props-container" style="height: 20px; padding: 3px 10px;">
+                <select class="props" style="height: 100%;"></select>
+            </div>
+            <div class="chart" style="position: relative; height: calc(100% - 26px);"></div>
+        `;
+        this.select = this.content.querySelector('select.props');
+        this.chartDiv = this.content.querySelector('div.chart');
+        this.container.appendChild(this.content);
     }
 
-    defineTableData() {
-        this.tableData = new google.visualization.DataTable();
-        this.tableData.addColumn('string', 'Model');
-        this.tableData.addColumn('string', 'Name');
-        this.tableData.addColumn('number', 'Instances');
-        this.tableData.addColumn('number', 'Polycount');
+    drawDropdown() {
+        const uniqueKeys = new Set();
 
-        for (let item of this.extension.aggregatedData) {
-            for (let [name, data] of Object.entries(item.modelData)) {
-                this.tableData.addRow([item.modelName, name, data.instances, data.polycount]);
-            }
+        this.extension.aggregatedData.forEach((value) => {
+            Object.keys(value.map).forEach((key) => {
+                uniqueKeys.add(key);
+            });
+        });
+
+        const uniqueKeysArray = Array.from(uniqueKeys);
+        const filteredKeysArray = uniqueKeysArray.filter(key => !key.startsWith("_"));
+        console.log('---drawDropdown filteredKeysArray:', filteredKeysArray);
+        this.select.innerHTML = filteredKeysArray.map(prop => `<option value="${prop}">${prop}</option>`).join('\n');
+        this.select.onchange = () => this.drawMaterial(this.select.value);
+        // return filteredKeysArray;
+    }
+
+    defineChartData(prop) {
+        console.log('---defineChartData this.extension.aggregatedData:', this.extension.aggregatedData);
+        // prop = "Item/Name";
+
+        // Create the header row
+        const header = ['Property'];
+        const models = Array.from(this.extension.aggregatedData.keys());
+        for (const model of models) {
+            const modelName = this.extension.getFileInfo(model, 'name'); // Call getFileInfo to get the model name
+            header.push(modelName);
         }
-    }
-        
-    
+        console.log('---defineChartData header:', header);
 
-    
-
-    drawTable() {
-        this.defineTableData();
-        this.table = new google.visualization.Table(this.tableDiv);
-        this.table.draw(this.tableData, {
-            width: '100%', 
-            height: '100%',
-            alternatingRowStyle: true,
-            cssClassNames: {
-                headerCell: 'googleTableHeader',
-                tableCell: 'googleTableRows'
-            },
-            sortColumn: 3,
-            sortAscending: false 
-        });  
-    }
-
-
-    defineGaugeData() {
-        this.gaugeData = new google.visualization.DataTable();
-        this.gaugeData.addColumn('string', 'Label');
-        this.gaugeData.addColumn('number', 'Value');
-        this.gaugeData.addRows([
-            ['PolyCount', 0]
-        ]);
-    }
-
-
-    drawGauge() {
-        this.gauge = new google.visualization.Gauge(this.gaugeDiv);
-
-        const totalPolyCount = this.extension.aggregatedData.reduce((total, item) => {
-            console.log('---drawGauge item.modelPolycount:', item.modelPolycount);
-            return total + item.modelPolycount;
-        }, 0);
-
-        const currentValue = this.gaugeData.getValue(0, 1);  // Get the current value
-
-        const options = {
-            width: '100%', 
-            height: '100%', 
-            redFrom: 0,  // Start red section from 0
-            redTo: currentValue,  // End red section at current value
-            greenFrom:currentValue, 
-            greenTo: totalPolyCount,
-            minorTicks: 0,
-            max: totalPolyCount,
-        };
-
-        this.gauge.draw(this.gaugeData, options);
-    }
-
-    drawPanel() {
-        this.drawTable();
-        //Define gauge data and draw the gauge initially
-        this.defineGaugeData();
-        this.drawGauge();  
-        // Add 'select' event listener
-        google.visualization.events.addListener(this.table, 'select', () => {
-
-            // Get the selected row
-            const selection = this.table.getSelection();
-            if (selection.length === 0) return;  // No row is selected
-
-            // Get the Polycount value of the selected row
-            const row = selection[0].row;
-            const polycount = this.tableData.getValue(row, 3);  // Assuming Polycount is the third column
-
-            // Update the gauge data
-            this.gaugeData.setValue(0, 1, polycount);
-
-            const selectedObjectName = this.tableData.getValue(row, 1);
-            const selectedModelName = this.tableData.getValue(row, 0);
-
-            // Find the object in this.extension.aggregatedData where modelName equals model
-            const selectedModelData = this.extension.aggregatedData.find(item => item.modelName === selectedModelName);
-
-            const dbIds = selectedModelData.modelData[selectedObjectName].dbids;
-
-            // Initialize model to null
-            let model = null;
-
-            // Iterate over the keys of targetNodesMap
-            for (let [key, value] of this.extension.targetNodesMap.entries()) {
-                // Get the name of the model
-                let name = this.extension.getFileInfo(key, "name");
-
-                // If the name matches the model name, set the model to key
-                if (name === selectedModelName) {
-                    model = key;
-                    break;
+        // Create the data rows
+        const dataRowsMap = new Map();
+        for (const [model, propertySet] of this.extension.aggregatedData.entries()) {
+            console.log('---defineChartData propertySet.map[prop]:', propertySet.map[prop]);
+            for (const item of propertySet.map[prop]) { // Iterate over the array of objects
+                if (!dataRowsMap.has(item.displayValue)) {
+                    const dbIdsForModels = new Array(models.length).fill([]); // Initialize an array of empty arrays for each model
+                    dbIdsForModels[models.indexOf(model)] = [item.dbId]; // Add the dbId to the correct position in the array
+                    dataRowsMap.set(item.displayValue, dbIdsForModels);
+                } else {
+                    dataRowsMap.get(item.displayValue)[models.indexOf(model)].push(item.dbId); // Push the dbId to the correct array
                 }
             }
+        }
 
-            // If model is not null, create the selection definition and select the elements
-            if (model) {
-                // Create the selection definition
-                let selectionDef = {
-                    model: model,
-                    ids: [dbIds],
-                    // selectionType: 3  // Replace 1 with the actual selection type
-                };
+        // Convert the Map to an array of arrays
+        const dataRows = Array.from(dataRowsMap, ([displayValue, dbIdsForModels]) => [displayValue, ...dbIdsForModels]);
 
-                // Select the corresponding model elements in the viewer
-                this.extension.viewer.setAggregateSelection([selectionDef], true);
+        console.log('---defineChartData dataRows:', dataRows);
 
-                // Isolate and fit the view to the selected elements
-                // Note: isolate and fitToView methods do not support aggregate selection directly
-                // You may need to iterate over the models and call these methods for each model
-                this.extension.viewer.isolate(dbIds, model);
-                this.extension.viewer.fitToView(dbIds, model);
+        // Combine the header and data rows
+        const data = [header, ...dataRows];
+
+        console.log('---defineChartData data:', data);
+
+        // Return the data
+        return data;
+
+        // Continue with your code...
+    }
+
+    drawMaterial(prop) {
+        const chartData = this.defineChartData(prop);
+        console.log('---drawMaterial chartData:', chartData);
+
+        var dataTable = new google.visualization.DataTable();
+
+        const firstItem = chartData[0];
+        firstItem.forEach((item, index) => {
+            const type = index === 0 ? 'string' : 'number';
+            dataTable.addColumn(type, item);
+        });
+
+        chartData.slice(1).forEach((row) => {
+            dataTable.addRow(row.map((item, index) => index === 0 ? item : item.length));
+        });
+
+        console.log('---drawMaterial dataTable:', dataTable);
+
+        var materialOptions = {
+            chart: {
+                title: 'Population of Largest U.S. Cities'
+            },
+            hAxis: {
+                title: 'Total Population',
+                minValue: 0,
+            },
+            vAxis: {
+                title: 'City'
+            },
+            bars: 'horizontal'
+        };
+
+        console.log('---drawMaterial this.chartDiv:', this.chartDiv);
+        var materialChart = new google.charts.Bar(this.chartDiv);
+        materialChart.draw(dataTable, materialOptions);
+    }
+
+    async setModel(model) {
+        const propertyNames = await this.extension.findPropertyNames(model);
+        this.select.innerHTML = propertyNames.map(prop => `<option value="${prop}">${prop}</option>`).join('\n');
+        // this.select.onchange = () => this.updateChart(model, this.select.value);
+        // this.updateChart(model, this.select.value);
+    }
+
+    async updateChart(model, propName) {
+        // Check if the Google Charts library is loaded before proceeding
+        if (!this.isGoogleChartsLoaded) {
+            console.error('Google Charts library is not loaded yet');
+            return;
+        }
+        const histogram = await this.extension.findPropertyValueOccurrences(model, propName);
+        console.log('---updateChart histogram:', histogram);
+        const propertyValues = Array.from(histogram.keys());
+
+        // Define an array of colors for the bars
+        const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'];
+
+        // Create an array of data rows, each with a color and an annotation from the colors array
+        const dataRows = propertyValues.map((val, i) => [String(val), histogram.get(val).length, `color: ${colors[i % colors.length]}; opacity: 0.6`, String(histogram.get(val).length)]);
+
+        // Create the data table
+        const data = new google.visualization.arrayToDataTable([
+            [propName, 'Count', { role: 'style' }, { role: 'annotation' }],
+            ...dataRows
+        ]);
+
+
+        const options = {
+            title: propName,
+            width: this.chartDiv.offsetWidth - 20,
+            height: this.chartDiv.offsetHeight - 20,
+            legend: { position: 'none' },
+            fontName: 'ArtifaktElement',
+            animation: {
+                duration: 1000, // Duration in milliseconds
+                easing: 'inAndOut', // Easing function
+                startup: true, // Animate on initial draw
+            },
+            chartArea:{left:200,top:50,width: '90%',height:'80%'},
+            hAxis: {
+                scaleType: 'log' // Set the horizontal axis to a logarithmic scale
             }
+        };
 
-            this.drawGauge();  // Redraw the gauge
-        });          
+        const chart = new google.visualization[this.chartType](this.chartDiv);
+        chart.draw(data, options);
 
-    } 
+        // Add an event listener for the chart's select event
+        google.visualization.events.addListener(chart, 'select', () => {
+            // Get information about the selected element
+            const selection = chart.getSelection();
+
+            // If an element is selected
+            if (selection.length > 0) {
+                // Get the row of the selected element
+                const row = selection[0].row;
+
+                // Get the value of the selected element
+                const selectedValue = data.getValue(row, 0); // 0 is the column index for property values
+
+                // Get the DBIDs associated with the selected value
+                const dbids = histogram.get(selectedValue);
+
+                // Isolate and fit the viewer to these DBIDs
+                this.extension.viewer.select(dbids);
+                this.extension.viewer.isolate(dbids);
+                this.extension.viewer.fitToView(dbids);
+            }
+        });
+    }
+
+    exportChart() {
+        // Google Charts doesn't provide a built-in method to export the chart as an image.
+        // You may need to use a third-party library or a server-side solution to export the chart.
+    }
 }

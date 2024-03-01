@@ -34,6 +34,8 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
     async onModelLoaded(model) {
         const targetNodes = await this.findTargetNodes(model);
         this.targetNodesMap.set(model, targetNodes); // Store targetNodes in the Map
+        console.log('---BaseExtension.js onModelUnloaded targetNodesMap:', this.targetNodesMap);
+
     }
 
     onModelUnloaded(model) {

@@ -6,11 +6,14 @@ class HistogramExtension extends BaseExtension {
         super(viewer, options);
         this._barChartButton = null;
         this._barChartPanel = null;
+        // Load the Google Charts library and set a callback to be executed once it's loaded
+        google.charts.load('current', {packages: ['corechart']});
+        google.charts.setOnLoadCallback(() => this.isGoogleChartsLoaded = true);
     }
 
     async load() {
         super.load();
-        await this.loadScript('https://www.gstatic.com/charts/loader.js', 'google.charts'); // Changed from Chart.js to Google Charts
+        // await this.loadScript('https://www.gstatic.com/charts/loader.js', 'google.charts'); // Changed from Chart.js to Google Charts
         console.log('HistogramExtension loaded.');
         return true;
     }

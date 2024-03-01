@@ -42,8 +42,8 @@ export function initViewer(container) {
                         // 'ReconstructPropsExtension',
                         // 'BulkPropertiesExtension',
                         // 'SearchExtension',
-                        'PolyCountExtension',
-                        // 'TestExtension',
+                        // 'PolyCountExtension',
+                        'TestExtension',
                         // "SceneBuilderExtension",
                     ]
                 }
