@@ -93,7 +93,6 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.gauge = new google.visualization.Gauge(this.gaugeDiv);
 
         const totalPolyCount = this.extension.aggregatedData.reduce((total, item) => {
-            console.log('---drawGauge item.modelPolycount:', item.modelPolycount);
             return total + item.modelPolycount;
         }, 0);
 

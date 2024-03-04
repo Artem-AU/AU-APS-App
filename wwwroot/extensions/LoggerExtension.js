@@ -18,22 +18,18 @@ class LoggerExtension extends BaseExtension {
     }
 
     async onModelLoaded(model) {
-        super.onModelLoaded(model);
-        // console.log('Logger Model loaded:', model);
-
-        // Access targetNodesMap
-        // console.log('Logger onModelLoaded Target nodes:', this.targetNodesMap);
+        await super.onModelLoaded(model);
+        console.log('---LoggerExtension.js onModelLoaded targetNodesMap:', this.targetNodesMap);
     }
 
     onModelUnloaded(model) {
         super.onModelUnloaded(model);
-        // console.log('Logger Model unloaded:', model);
-        // console.log('Logger onModelUnloaded Target nodes:', this.targetNodesMap);
+        console.log('---LoggerExtension.js onModelUnloaded targetNodesMap:', this.targetNodesMap);
     }
 
     async onSelectionChanged(model, dbids) {
         super.onSelectionChanged(model, dbids);
-        // console.log('Selection has changed', dbids);
+        console.log('Selection has changed', dbids);
         // console.log('Logger onSelectionChanged Target nodes:', this.targetNodesMap);
 
     }

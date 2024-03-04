@@ -5,15 +5,9 @@ export class TestPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.container.style.right = (options.x || 0) + 'px';
         this.container.style.top = (options.y || 0) + 'px';
         this.container.style.width = (options.width || 900) + 'px';
-        this.container.style.minWidth = '400px';
         this.container.style.height = (options.height || 600) + 'px';
-        this.container.style.minHeight = '450px';
-        this.container.style.resize = 'auto';
-        this.chartType = options.chartType || 'ColumnChart'; // Default to ColumnChart for Google Charts
-
         // Load the Google Charts library and set a callback to be executed once it's loaded
-        google.charts.load('current', { packages: ['corechart'] });
-        google.charts.setOnLoadCallback(() => this.isGoogleChartsLoaded = true);
+        google.charts.load('current', {packages: ['corechart', 'bar']});
     }
 
     initialize() {
@@ -30,11 +24,12 @@ export class TestPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.content.style.backgroundColor = 'white';
         this.content.innerHTML = `
             <div class="props-container" style="height: 20px; padding: 3px 10px;">
-                <select class="props" style="height: 100%;"></select>
+                <label for="props-select" style="color: black; font-weight: bold;">Select Property:</label>
+                <select id="props-select" class="props" style="height: 100%; font-family: ArtifaktElement; color: black;"></select>
             </div>
             <div class="chart" style="position: relative; height: calc(100% - 26px);"></div>
         `;
-        this.select = this.content.querySelector('select.props');
+        this.select = this.content.querySelector('#props-select');
         this.chartDiv = this.content.querySelector('div.chart');
         this.container.appendChild(this.content);
     }
@@ -50,16 +45,12 @@ export class TestPanel extends Autodesk.Viewing.UI.DockingPanel {
 
         const uniqueKeysArray = Array.from(uniqueKeys);
         const filteredKeysArray = uniqueKeysArray.filter(key => !key.startsWith("_"));
-        console.log('---drawDropdown filteredKeysArray:', filteredKeysArray);
         this.select.innerHTML = filteredKeysArray.map(prop => `<option value="${prop}">${prop}</option>`).join('\n');
-        this.select.onchange = () => this.drawMaterial(this.select.value);
+        this.select.onchange = () => this.drawChart(this.select.value);
         // return filteredKeysArray;
     }
 
     defineChartData(prop) {
-        console.log('---defineChartData this.extension.aggregatedData:', this.extension.aggregatedData);
-        // prop = "Item/Name";
-
         // Create the header row
         const header = ['Property'];
         const models = Array.from(this.extension.aggregatedData.keys());
@@ -67,12 +58,14 @@ export class TestPanel extends Autodesk.Viewing.UI.DockingPanel {
             const modelName = this.extension.getFileInfo(model, 'name'); // Call getFileInfo to get the model name
             header.push(modelName);
         }
-        console.log('---defineChartData header:', header);
 
         // Create the data rows
         const dataRowsMap = new Map();
         for (const [model, propertySet] of this.extension.aggregatedData.entries()) {
-            console.log('---defineChartData propertySet.map[prop]:', propertySet.map[prop]);
+            // Check if prop is in propertySet.map
+            if (!(prop in propertySet.map)) {
+                continue; // Skip to the next iteration of the outer loop
+            }
             for (const item of propertySet.map[prop]) { // Iterate over the array of objects
                 if (!dataRowsMap.has(item.displayValue)) {
                     const dbIdsForModels = new Array(models.length).fill([]); // Initialize an array of empty arrays for each model
@@ -87,24 +80,17 @@ export class TestPanel extends Autodesk.Viewing.UI.DockingPanel {
         // Convert the Map to an array of arrays
         const dataRows = Array.from(dataRowsMap, ([displayValue, dbIdsForModels]) => [displayValue, ...dbIdsForModels]);
 
-        console.log('---defineChartData dataRows:', dataRows);
-
         // Combine the header and data rows
         const data = [header, ...dataRows];
 
-        console.log('---defineChartData data:', data);
-
         // Return the data
         return data;
-
-        // Continue with your code...
     }
 
-    drawMaterial(prop) {
+    drawChart(prop) {
         const chartData = this.defineChartData(prop);
-        console.log('---drawMaterial chartData:', chartData);
 
-        var dataTable = new google.visualization.DataTable();
+        const dataTable = new google.visualization.DataTable();
 
         const firstItem = chartData[0];
         firstItem.forEach((item, index) => {
@@ -116,63 +102,12 @@ export class TestPanel extends Autodesk.Viewing.UI.DockingPanel {
             dataTable.addRow(row.map((item, index) => index === 0 ? item : item.length));
         });
 
-        console.log('---drawMaterial dataTable:', dataTable);
-
-        var materialOptions = {
-            chart: {
-                title: 'Population of Largest U.S. Cities'
-            },
-            hAxis: {
-                title: 'Total Population',
-                minValue: 0,
-            },
-            vAxis: {
-                title: 'City'
-            },
-            bars: 'horizontal'
-        };
-
-        console.log('---drawMaterial this.chartDiv:', this.chartDiv);
-        var materialChart = new google.charts.Bar(this.chartDiv);
-        materialChart.draw(dataTable, materialOptions);
-    }
-
-    async setModel(model) {
-        const propertyNames = await this.extension.findPropertyNames(model);
-        this.select.innerHTML = propertyNames.map(prop => `<option value="${prop}">${prop}</option>`).join('\n');
-        // this.select.onchange = () => this.updateChart(model, this.select.value);
-        // this.updateChart(model, this.select.value);
-    }
-
-    async updateChart(model, propName) {
-        // Check if the Google Charts library is loaded before proceeding
-        if (!this.isGoogleChartsLoaded) {
-            console.error('Google Charts library is not loaded yet');
-            return;
-        }
-        const histogram = await this.extension.findPropertyValueOccurrences(model, propName);
-        console.log('---updateChart histogram:', histogram);
-        const propertyValues = Array.from(histogram.keys());
-
-        // Define an array of colors for the bars
-        const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'];
-
-        // Create an array of data rows, each with a color and an annotation from the colors array
-        const dataRows = propertyValues.map((val, i) => [String(val), histogram.get(val).length, `color: ${colors[i % colors.length]}; opacity: 0.6`, String(histogram.get(val).length)]);
-
-        // Create the data table
-        const data = new google.visualization.arrayToDataTable([
-            [propName, 'Count', { role: 'style' }, { role: 'annotation' }],
-            ...dataRows
-        ]);
-
-
         const options = {
-            title: propName,
+            // title: prop,
             width: this.chartDiv.offsetWidth - 20,
             height: this.chartDiv.offsetHeight - 20,
-            legend: { position: 'none' },
-            fontName: 'ArtifaktElement',
+            legend: { position: 'top', maxLines: 3 },
+            fontName: 'Titillium Web',
             animation: {
                 duration: 1000, // Duration in milliseconds
                 easing: 'inAndOut', // Easing function
@@ -181,38 +116,11 @@ export class TestPanel extends Autodesk.Viewing.UI.DockingPanel {
             chartArea:{left:200,top:50,width: '90%',height:'80%'},
             hAxis: {
                 scaleType: 'log' // Set the horizontal axis to a logarithmic scale
-            }
+            },
+            isStacked: true
         };
 
-        const chart = new google.visualization[this.chartType](this.chartDiv);
-        chart.draw(data, options);
-
-        // Add an event listener for the chart's select event
-        google.visualization.events.addListener(chart, 'select', () => {
-            // Get information about the selected element
-            const selection = chart.getSelection();
-
-            // If an element is selected
-            if (selection.length > 0) {
-                // Get the row of the selected element
-                const row = selection[0].row;
-
-                // Get the value of the selected element
-                const selectedValue = data.getValue(row, 0); // 0 is the column index for property values
-
-                // Get the DBIDs associated with the selected value
-                const dbids = histogram.get(selectedValue);
-
-                // Isolate and fit the viewer to these DBIDs
-                this.extension.viewer.select(dbids);
-                this.extension.viewer.isolate(dbids);
-                this.extension.viewer.fitToView(dbids);
-            }
-        });
-    }
-
-    exportChart() {
-        // Google Charts doesn't provide a built-in method to export the chart as an image.
-        // You may need to use a third-party library or a server-side solution to export the chart.
+        const chart = new google.visualization.BarChart(this.chartDiv);
+        chart.draw(dataTable, options);
     }
 }
