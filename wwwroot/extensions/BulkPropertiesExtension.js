@@ -32,35 +32,59 @@ class BulkPropertiesExtension extends BaseExtension {
     }
 
     onToolbarCreated () {
-        this._panel = new BulkPropertiesPanel(this, 'bulkProperties-panel', 'Bulk Properties Report', { x: 50, y: 100});
+        this._panel = new BulkPropertiesPanel(this, 'bulkProperties-panel', 'Bulk Properties Report', { x: 20, y: 50});
         this._button = this.createToolbarButton('bulkProperties-button', 'https://cdn0.iconfinder.com/data/icons/infographic-element-8/512/26_Diagram-64.png', 'Bulk Properties', "lightgreen");
         this._button.onClick = () => {
             this._panel.setVisible(!this._panel.isVisible());
             this._button.setState(this._panel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
             if (this._panel.isVisible() && this.viewer.model) { // Combine all conditions
-                console.log("Should draw dashboard ");
 
                 // Create the new elements
                 this._panel.createTable();
                 this._panel.createColumnSelector();
                 this._panel.createToggle();
+                this._panel.createUpdateButton();
+
             }
         };
     }
 
     async onModelLoaded(model) {
-        this.tableData = await this.createData();
+        await super.onModelLoaded(model);
+        await this.createAggregatedData();
     }
 
-    async createData() {
-        const targetNodes = await this.findTargetNodes(this.viewer.model);
-        // Get the property set for the dbIds
-        const propertySet = await this.viewer.model.getPropertySetAsync(targetNodes);
-        console.log('---Property set:', propertySet);
+    async onModelUnloaded(model) {
+        super.onModelUnloaded(model);
+        await this.createAggregatedData();
+    }
 
+    async createAggregatedData() {
+        let allData = await Promise.all(
+            Array.from(this.targetNodesMap.entries()).map(async ([model, dbIds]) => {
+                return this.createData(model, dbIds);
+            })
+        );
+        // Merge all data frames into one
+        let mergedData = {
+            columns: [],
+            rows: []
+        };
+        allData.forEach(data => {
+            // Merge columns
+            mergedData.columns = [...mergedData.columns, ...data.columns.filter(column => !mergedData.columns.find(c => c.field === column.field))];
+            // Concatenate rows
+            mergedData.rows = [...mergedData.rows, ...data.rows];
+        });
+
+        this.tableData = mergedData;
+    }
+
+    async createData(model, targetNodes) {
+        // Get the property set for the dbIds
+        const propertySet = await model.getPropertySetAsync(targetNodes);
         // Step 1: Create an empty array to hold the rows of the table
         let rows = [];
-
         // Step 2: Create column definitions
         let columns = Object.keys(propertySet.map).map(key => {
             let title = key.replace('__category__/Category', 'Category')
@@ -69,13 +93,20 @@ class BulkPropertiesExtension extends BaseExtension {
             return {title: title, field: key};
         });
 
+        // Add "Model" column at the beginning of the columns array
+        const modelName = this.getFileInfo(model, 'name');
+        columns.unshift({title: 'Model', field: 'model'});
+
+        // // Add "Model-DbId" column
+        // columns.push({title: 'Model-DbId', field: 'modelDbId'});
+
         // Step 3 and 4: Create rows
         for (let key in propertySet.map) {
             propertySet.map[key].forEach(item => {
                 // Find the row for this dbId, or create a new one if it doesn't exist
                 let row = rows.find(r => r.dbId === item.dbId);
                 if (!row) {
-                    row = {dbId: item.dbId};
+                    row = {dbId: item.dbId, model: modelName, modelDbId: `${modelName}=${item.dbId}`};
                     rows.push(row);
                 }
 
@@ -83,12 +114,12 @@ class BulkPropertiesExtension extends BaseExtension {
                 row[key] = item.displayValue;
             });
         }
-
         // Create the data table object
         let data = {
             columns: columns,
             rows: rows
         };
+
 
         return data;
     }
@@ -98,21 +129,26 @@ class BulkPropertiesExtension extends BaseExtension {
     }
 
     async onSelectionChanged(model, dbids) {
-        // Call the parent method
-        super.onSelectionChanged(model, dbids);
+        // Check if the panel is visible and the toggle is on
+        if (this._panel.isVisible() && this._panel.settingsToggleButton.classList.contains('on')) {
+            const aggregateSelection = this.viewer.getAggregateSelection();
 
-        console.log('---Selection has changed', dbids);
+            let isToggleOn = this._panel.settingsToggleButton.classList.contains('on');
 
-        // Log the state of the toggle
-        let isToggleOn = this._panel.settingsToggleDiv.classList.contains('on');
-        console.log('---Toggle state', isToggleOn);
+            // If the toggle is on and there are selected items in the aggregate selection
+            if (isToggleOn && aggregateSelection.some(selection => selection.selection.length > 0)) {
+                // Create an array of modelDbId strings for each model:dbId pair in the aggregateSelection
+                const modelDbIds = aggregateSelection.flatMap(selection => 
+                    selection.selection.map(dbId => `${this.getFileInfo(selection.model, 'name')}=${dbId}`)
+                );
 
-        // If the toggle is on and there are selected dbIds, filter the table to only show rows with these dbIds
-        if (isToggleOn && dbids.length > 0) {
-            this._panel.table.setFilter("dbId", "in", dbids);
-        } else {
-            // If the toggle is off or there are no selected dbIds, clear the filter
-            this._panel.isVisible() && this._panel.table.clearFilter();
+                // Assign modelDbIds to combinedFilters.selectionFilter
+                this._panel.combinedFilters.selectionFilter = modelDbIds;
+            } else {
+
+                // Also clear the selectionFilter
+                this._panel.combinedFilters.selectionFilter = null;
+            }
         }
     }
     

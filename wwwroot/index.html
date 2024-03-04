@@ -25,16 +25,16 @@
     <div id="header">
         <img class="logo" src="https://media.cdn.gradconnection.com/uploads/697e2e0d-3530-4608-873f-b579befcdf63-eic-activities.png" alt="Autodesk Platform Services">
         <span class="title">AU _ Custom Construction Data</span>
-        <select name="models" id="models" aria-label="Choose a model"></select>
-        <button id="upload" title="Upload New Model">Upload</button>
+        <select name="models" id="models" aria-label="Choose a model" multiple></select>
+        <button type="button" id="upload" title="Upload New Model">Upload</button>
         <input type="file" id="input" title="Input Label">        <!-- <input type="search" id="filter" placeholder="Search...">
         <button id="search">Search</button> -->
     </div>
     <div id="preview"></div>
-    <div id="searchoverlay">
+    <!-- <div id="searchoverlay">
         <input type="search" id="filter" placeholder="Search...">
         <button id="search">Quick Search</button>
-    </div>
+    </div> -->
     <div id="overlay"></div>
     <script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/viewer3D.js"></script>
     <!-- Add the Select2 JS -->

@@ -1,7 +1,7 @@
 import { BaseExtension } from './BaseExtension.js';
-import { HistogramPanel } from './HistogramPanel.js';
+import { TestPanel } from './TestPanel.js';
 
-class HistogramExtension extends BaseExtension {
+class TestExtension extends BaseExtension {
     constructor(viewer, options) {
         super(viewer, options);
         this._button = null;
@@ -12,7 +12,7 @@ class HistogramExtension extends BaseExtension {
 
     async load() {
         super.load();
-        console.log('HistogramExtension loaded.');
+        console.log('TestExtension loaded.');
         return true;
     }
 
@@ -27,12 +27,12 @@ class HistogramExtension extends BaseExtension {
             panel.uninitialize();
         }
         this._panel = null;
-        console.log('HistogramExtension unloaded.');
+        console.log('TestExtension unloaded.');
         return true;
     }
 
     onToolbarCreated() {
-        this._panel = new HistogramPanel(this, 'dashboard-barchart-panel', 'Property Histogram', { x: 10, y: 50 });
+        this._panel = new TestPanel(this, 'dashboard-barchart-panel', 'Property Histogram', { x: 10, y: 50 });
 
         this._button = this.createToolbarButton('dashboard-barchart-button', 'https://img.icons8.com/small/32/bar-chart.png', 'Property Histogram (Bar Chart)', 'lightblue');
         this._button.onClick = async () => {
@@ -87,4 +87,4 @@ class HistogramExtension extends BaseExtension {
     }
 }
 
-Autodesk.Viewing.theExtensionManager.registerExtension('HistogramExtension', HistogramExtension);
+Autodesk.Viewing.theExtensionManager.registerExtension('TestExtension', TestExtension);

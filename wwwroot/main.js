@@ -1,30 +1,17 @@
 import { initViewer, loadModel } from './viewer.js';
 
-initViewer(document.getElementById('preview')).then(viewer => {
+initViewer(document.getElementById('preview')).then(aggregatedView => {
 
-    // Get the registered default profile
-    // const defaultProfile = viewer.profileManager.getProfileOrDefault();
-    // console.log(defaultProfile);
+    aggregatedView.setNodes([]);
 
-    // Create and set the custom profile
-    const customProfileSettings = {
-        settings: {
-            // openPropertiesOnSelect: true, //boolean, false is default
-            reverseMouseZoomDir: true, //boolean, false is default
-            wheelSetsPivot: true, //boolean, false is default
-            lightPreset: 17, 
-        }
-    };
-    const customProfile = new Autodesk.Viewing.Profile(customProfileSettings);
-    viewer.setProfile(customProfile);
-    // console.log(customProfile);
-
-    const urn = window.location.hash?.substring(1);
-    setupModelSelection(viewer, urn);
-    setupModelUpload(viewer);
+    setupModelSelection(aggregatedView);
+    // setupModelSelection(aggregatedView, urn);
+    setupModelUpload(aggregatedView);
+}).catch(error => {
+    console.error('Failed to initialize aggregatedView:', error);
 });
 
-async function setupModelSelection(viewer, selectedUrn) {
+async function setupModelSelection(aggregatedView) {
     const dropdown = document.getElementById('models');
     dropdown.innerHTML = '';
     try {
@@ -33,18 +20,27 @@ async function setupModelSelection(viewer, selectedUrn) {
             throw new Error(await resp.text());
         }
         const models = await resp.json();
-        dropdown.innerHTML = models.map(model => `<option value=${model.urn} ${model.urn === selectedUrn ? 'selected' : ''}>${model.name}</option>`).join('\n');
-        dropdown.onchange = () => onModelSelected(viewer, dropdown.value);
-        if (dropdown.value) {
-            onModelSelected(viewer, dropdown.value);
-        }
+        dropdown.innerHTML = models.map(model => `<option value=${model.urn}>${model.name}</option>`).join('\n');        
+        // Initialize Select2 on the dropdown
+        $(dropdown).select2({
+            placeholder: 'Select Model...', // Add a placeholder
+        });
+        dropdown.onchange = () => {
+            const selectedModels = Array.from(dropdown.options)
+                .filter(option => option.selected)
+                .map(option => option.value);
+            onModelSelected(aggregatedView, selectedModels); // Pass array of selected models
+        };
+        // if (dropdown.value) {
+        //     onModelSelected(aggregatedView, [dropdown.value]); // Pass single selected model as an array
+        // }
     } catch (err) {
         alert('Could not list models. See the console for more details.');
         console.error(err);
     }
 }
 
-async function setupModelUpload(viewer) {
+async function setupModelUpload(aggregatedView) {
     const upload = document.getElementById('upload');
     const input = document.getElementById('input');
     const models = document.getElementById('models');
@@ -66,7 +62,7 @@ async function setupModelUpload(viewer) {
                 throw new Error(await resp.text());
             }
             const model = await resp.json();
-            setupModelSelection(viewer, model.urn);
+            setupModelSelection(aggregatedView, model.urn);
         } catch (err) {
             alert(`Could not upload model ${file.name}. See the console for more details.`);
             console.error(err);
@@ -79,34 +75,72 @@ async function setupModelUpload(viewer) {
     };
 }
 
-async function onModelSelected(viewer, urn) {
+async function onModelSelected(aggregatedView, urns) {
     if (window.onModelSelectedTimeout) {
         clearTimeout(window.onModelSelectedTimeout);
         delete window.onModelSelectedTimeout;
     }
-    window.location.hash = urn;
     try {
-        const resp = await fetch(`/api/models/${urn}/status`);
-        if (!resp.ok) {
-            throw new Error(await resp.text());
+
+        const existingUrns = Object.keys(aggregatedView.modelItems).map(urn => {
+            const parts = urn.split('/');
+            const subParts = parts[0].split(':');
+            return subParts[subParts.length - 1];
+        });
+        const newUrns = urns.filter(urn => !existingUrns.includes(urn));
+
+        // Find redundantUrns and unload them
+        const redundantUrns = existingUrns.filter(urn => !urns.includes(urn));
+        Object.keys(aggregatedView.modelItems).forEach(key => {
+            redundantUrns.forEach(urn => {
+                if (key.includes(urn)) {
+                    const bubbleNode = aggregatedView.modelItems[key];
+                    // console.log('---main.js onModelSelected redundantUrns:', urn, bubbleNode);
+                    aggregatedView.unload(bubbleNode.node);
+                }
+            });
+        });
+                
+        // If newUrns is empty, do nothing and return
+        if (newUrns.length === 0) {
+            return;
         }
-        const status = await resp.json();
-        switch (status.status) {
-            case 'n/a':
-                showNotification(`Model has not been translated.`);
-                break;
-            case 'inprogress':
-                showNotification(`Model is being translated (${status.progress})...`);
-                window.onModelSelectedTimeout = setTimeout(onModelSelected, 5000, viewer, urn);
-                break;
-            case 'failed':
-                showNotification(`Translation failed. <ul>${status.messages.map(msg => `<li>${JSON.stringify(msg)}</li>`).join('')}</ul>`);
-                break;
-            default:
-                clearNotification();
-                loadModel(viewer, urn);
-                break; 
-        }
+        
+
+        const tasks = urns.map(async urn => {
+            window.location.hash = urn;
+
+            // Check if the URN exists
+            const resp = await fetch(`/api/models/${urn}/status`, { method: 'HEAD' });
+            if (resp.ok) {
+                // The URN exists, proceed with loading
+                const statusResp = await fetch(`/api/models/${urn}/status`);
+                if (!statusResp.ok) {
+                    throw new Error(await statusResp.text());
+                }
+                const status = await statusResp.json();
+                switch (status.status) {
+                    case 'n/a':
+                        showNotification(`Model has not been translated.`);
+                        break;
+                    case 'inprogress':
+                        showNotification(`Model is being translated (${status.progress})...`);
+                        window.onModelSelectedTimeout = setTimeout(onModelSelected, 5000, aggregatedView, [urn]);
+                        break;
+                    case 'failed':
+                        showNotification(`Translation failed. <ul>${status.messages.map(msg => `<li>${JSON.stringify(msg)}</li>`).join('')}</ul>`);
+                        break;
+                    default:
+                        clearNotification();
+                        return loadModel(aggregatedView, urn);
+                }
+            } else {
+                // The URN does not exist, throw an error or handle it appropriately
+                console.error(`URN ${urn} does not exist`);
+            }
+        });
+        const bubbles = await Promise.all(tasks);
+        aggregatedView.setNodes(bubbles.filter(Boolean));
     } catch (err) {
         alert('Could not load model. See the console for more details.');
         console.error(err);

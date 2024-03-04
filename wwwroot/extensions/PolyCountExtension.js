@@ -6,14 +6,6 @@ class PolyCountExtension extends BaseExtension {
         super(viewer, options);
         this._viewer = viewer;
         this._options = options;
-        this.tableData = {}
-        // Initialize dataTablePromise and resolveDataTable
-        this.dataTablePromise = new Promise((resolve) => {
-            this.resolveDataTable = resolve;
-        });
-        // Initialize googleDataTable as null
-        this.googleDataTable = null;
-        this.totalPolyCount = 0;
         // Load the Google Charts library and set a callback to be executed once it's loaded
         google.charts.load('current', {'packages':['table', "gauge"]});
         google.charts.setOnLoadCallback(() => this.isGoogleChartsLoaded = true);
@@ -40,47 +32,63 @@ class PolyCountExtension extends BaseExtension {
         return true;
     }
 
-    onToolbarCreated() {
+    onToolbarCreated() {       
         this._panel = new PolyCountPanel(this, 'dashboard-test-panel', 'PolyCount Report', { x: 50, y: 100});
         this._button = this.createToolbarButton('dashboard-test-button', 'https://cdn1.iconfinder.com/data/icons/web-con-set-117-line/128/polygons_plane-figure_geometrical_pentagon_hexagon_quadrilateral_side_vertex_polygram_two-dimension-64.png', 'PolyCount report by Category', "lightyellow");
         this._button.onClick = () => {
             this._panel.setVisible(!this._panel.isVisible());
             this._button.setState(this._panel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
             if (this._panel.isVisible() && this.viewer.model) {
-                this._panel.updatePanel();
+                this._panel.drawPanel();
+
             }
         };
     }
 
-    async onGeometryLoaded(model) {
+    async onModelLoaded(model) {
+        await super.onModelLoaded(model);
+    }
+
+    onGeometryLoaded(model) {
         super.onGeometryLoaded(model);
 
-        const targetNodes = await this.findTargetNodes(model);
+        this.createAggregatedData();
+        if (this._panel.isVisible()) {
+            this._panel.drawPanel();
+        }
+    }
 
-        // Get the instance tree
+    onModelUnloaded(model) {
+        super.onModelUnloaded(model); 
+
+        this.createAggregatedData();
+        if (this._panel.isVisible()) {
+            this._panel.drawPanel();
+        }
+    }
+
+    createAggregatedData() {
+        this.aggregatedData = [];
+        for (let [model, targetNodes] of this.targetNodesMap.entries()) {
+            const modelName = this.getFileInfo(model, "name");
+            const modelData = this.createData(model, targetNodes);
+            const modelPolycount = model.getData().instanceTree.fragList.geoms.instancePolyCount;
+            this.aggregatedData.push({ modelName, modelData, modelPolycount });
+        }
+    }
+
+    createData(model, targetNodes) {
         const instanceTree = model.getData().instanceTree;
-
-        // Create a new DataTable
-        this.googleDataTable = new google.visualization.DataTable();
-
-        // Define the columns
-        this.googleDataTable.addColumn('string', 'Name');
-        this.googleDataTable.addColumn('number', 'Instances');
-        this.googleDataTable.addColumn('number', 'Polycount');
+        const data = {}
 
         // Iterate over each dbId
         for (const dbId of targetNodes) {
-            let totalTriCount = 0;
+            let dbidPolycount = 0;
 
             // Get the fragment IDs for each dbId
             instanceTree.enumNodeFragments(dbId, (fragId) => {
-                // Get the triangle count for each fragment
-                const renderProxy = this.viewer.impl.getRenderProxy(model, fragId);
-
-                if (renderProxy && renderProxy.geometry) {
-                    const polyCount = renderProxy.geometry.polyCount;
-                    totalTriCount += polyCount;
-                }
+                const fragPolyCount = instanceTree.fragList.fragments.polygonCounts[fragId];
+                dbidPolycount += fragPolyCount;
             }, true);
 
             // Get the node name
@@ -89,30 +97,20 @@ class PolyCountExtension extends BaseExtension {
             // Initialize the data for the name if it doesn't exist
             let cleanName = nodeName.split(/[[\:]/)[0].trim();
 
-            if (!this.tableData[cleanName]) {
-                this.tableData[cleanName] = { instances: 0, polycount: 0, dbids: [] };
+            if (!data[cleanName]) {
+                data[cleanName] = { instances: 0, polycount: 0, dbids: []};
             }
 
             // Increment the instance count for the name
-            this.tableData[cleanName].instances++;
+            data[cleanName].instances++;
 
             // Calculate the Name Polycount
-            this.tableData[cleanName].polycount += totalTriCount;
-            this.tableData[cleanName].dbids.push(dbId);
-
+            data[cleanName].polycount += dbidPolycount;
+            data[cleanName].dbids.push(dbId);
         }
+        return data;
+    }
 
-        // Iterate over each item in tableData
-        for (let name in this.tableData) {
-            // Add a row for each item
-            this.googleDataTable.addRow([name, this.tableData[name].instances, this.tableData[name].polycount]);
-        }
-
-        // Resolve the promise
-        this.resolveDataTable();
-        
-        this.totalPolyCount = model.instancePolyCount();
-    }        
 }
 
 Autodesk.Viewing.theExtensionManager.registerExtension('PolyCountExtension', PolyCountExtension);
