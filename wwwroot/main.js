@@ -1,6 +1,8 @@
 import { initViewer, loadModel } from './viewer.js';
 
 initViewer(document.getElementById('preview')).then(aggregatedView => {
+    // console.log(LMV_VIEWER_VERSION); // Logs the value of LMV_VIEWER_VERSION to the console
+
 
     aggregatedView.setNodes([]);
 
