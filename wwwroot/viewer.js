@@ -9,6 +9,7 @@ import './extensions/PolyCountExtension.js';
 import './extensions/BulkPropertiesExtension.js';
 import './extensions/SceneBuilderExtension.js';
 import './extensions/TestExtension.js';
+// import './extensions/IddPipelineExtension.js';
 
 
 
@@ -45,6 +46,7 @@ export function initViewer(container) {
                         'PolyCountExtension',
                         // 'TestExtension',
                         // "SceneBuilderExtension",
+                        // 'IddPipelineExtension',
                     ]
                 }
             };
