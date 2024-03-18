@@ -1,7 +1,7 @@
 import { BaseExtension } from './BaseExtension.js';
-import { TestPanel } from './TestPanel.js';
+import { QtyHistogramPanel } from './QtyHistogramPanel.js';
 
-class TestExtension extends BaseExtension {
+class QtyHistogramExtension extends BaseExtension {
     constructor(viewer, options) {
         super(viewer, options);
         this._button = null;
@@ -12,7 +12,7 @@ class TestExtension extends BaseExtension {
 
     async load() {
         super.load();
-        console.log('TestExtension loaded.');
+        console.log('QtyHistogramExtension loaded.');
         return true;
     }
 
@@ -27,14 +27,14 @@ class TestExtension extends BaseExtension {
             panel.uninitialize();
         }
         this._panel = null;
-        console.log('TestExtension unloaded.');
+        console.log('QtyHistogramExtension unloaded.');
         return true;
     }
 
     onToolbarCreated() {
-        this._panel = new TestPanel(this, 'dashboard-barchart-panel', 'Property Histogram', { x: 10, y: 50 });
+        this._panel = new QtyHistogramPanel(this, 'dashboard-barchart-panel', 'Property Histogram', { x: 10, y: 50 });
 
-        this._button = this.createToolbarButton('dashboard-barchart-button', 'https://cdn0.iconfinder.com/data/icons/phosphor-light-vol-4/256/test-tube-light-64.png', 'Property Histogram (Bar Chart)', 'lightsalmon');
+        this._button = this.createToolbarButton('dashboard-barchart-button', 'https://cdn3.iconfinder.com/data/icons/sports-55/24/Weight_Machine-64.png', 'Property Histogram (Bar Chart)', 'lightsalmon');
         this._button.onClick = async () => {
             this._panel.setVisible(!this._panel.isVisible());
             this._button.setState(this._panel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
@@ -88,4 +88,4 @@ class TestExtension extends BaseExtension {
     }
 }
 
-Autodesk.Viewing.theExtensionManager.registerExtension('TestExtension', TestExtension);
+Autodesk.Viewing.theExtensionManager.registerExtension('QtyHistogramExtension', QtyHistogramExtension);

@@ -1,4 +1,4 @@
-export class TestPanel extends Autodesk.Viewing.UI.DockingPanel {
+export class QtyHistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
     constructor(extension, id, title, options) {
         super(extension.viewer.container, id, title, options);
         this.extension = extension;

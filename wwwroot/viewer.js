@@ -10,6 +10,7 @@ import './extensions/BulkPropertiesExtension.js';
 import './extensions/SceneBuilderExtension.js';
 import './extensions/TestExtension.js';
 // import './extensions/IddPipelineExtension.js';
+import './extensions/QtyHistogramExtension.js';
 
 
 
@@ -47,6 +48,7 @@ export function initViewer(container) {
                         // 'TestExtension',
                         // "SceneBuilderExtension",
                         // 'IddPipelineExtension',
+                        'QtyHistogramExtension',
                     ]
                 }
             };
