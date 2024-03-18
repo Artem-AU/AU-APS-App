@@ -32,9 +32,9 @@ class QtyHistogramExtension extends BaseExtension {
     }
 
     onToolbarCreated() {
-        this._panel = new QtyHistogramPanel(this, 'dashboard-barchart-panel', 'Property Histogram', { x: 10, y: 50 });
+        this._panel = new QtyHistogramPanel(this, 'qty-histogram-panel', 'Quantity Histogram', { x: 10, y: 50 });
 
-        this._button = this.createToolbarButton('dashboard-barchart-button', 'https://cdn3.iconfinder.com/data/icons/sports-55/24/Weight_Machine-64.png', 'Property Histogram (Bar Chart)', 'lightsalmon');
+        this._button = this.createToolbarButton('qty-histogram-button', 'https://cdn3.iconfinder.com/data/icons/sports-55/24/Weight_Machine-64.png', 'Quantity Histogram (Bar Chart)', 'lightsalmon');
         this._button.onClick = async () => {
             this._panel.setVisible(!this._panel.isVisible());
             this._button.setState(this._panel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
