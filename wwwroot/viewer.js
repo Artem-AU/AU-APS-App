@@ -39,16 +39,16 @@ export function initViewer(container) {
                         'Autodesk.Explode',
                         'LoggerExtension',
                         // 'SummaryExtension',
-                        'HistogramExtension',
+                        // 'HistogramExtension',
                         // 'DataGridExtension',
                         // 'ReconstructPropsExtension',
-                        'BulkPropertiesExtension',
+                        // 'BulkPropertiesExtension',
                         // 'SearchExtension',
                         'PolyCountExtension',
                         // 'TestExtension',
                         // "SceneBuilderExtension",
                         // 'IddPipelineExtension',
-                        'QtyHistogramExtension',
+                        // 'QtyHistogramExtension',
                     ]
                 }
             };
