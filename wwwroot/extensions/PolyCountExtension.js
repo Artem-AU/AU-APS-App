@@ -6,6 +6,7 @@ class PolyCountExtension extends BaseExtension {
         super(viewer, options);
         this._viewer = viewer;
         this._options = options;
+        this.modelLoadedPromise = null; // Add this line
         // Load the Google Charts library and set a callback to be executed once it's loaded
         google.charts.load('current', {'packages':['table', "gauge"]});
         google.charts.setOnLoadCallback(() => this.isGoogleChartsLoaded = true);
@@ -46,12 +47,14 @@ class PolyCountExtension extends BaseExtension {
     }
 
     async onModelLoaded(model) {
-        await super.onModelLoaded(model);
+        this.modelLoadedPromise = super.onModelLoaded(model); // Store the promise
     }
 
-    onGeometryLoaded(model) {
+    async onGeometryLoaded(model) {
         super.onGeometryLoaded(model);
-
+        if (this.modelLoadedPromise) {
+            await this.modelLoadedPromise; // Wait for the promise to resolve
+        }
         this.createAggregatedData();
         if (this._panel.isVisible()) {
             this._panel.drawPanel();
