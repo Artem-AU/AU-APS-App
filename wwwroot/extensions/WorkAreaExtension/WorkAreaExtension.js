@@ -41,7 +41,7 @@ class WorkAreaExtension extends BaseExtension {
     onToolbarCreated() {
         this._panel = new WorkAreaPanel(this, 'workarea-panel', 'Work-Area Setup', { x: 10, y: 50 });
 
-        this._button = this.createToolbarButton('workarea-button', 'https://cdn0.iconfinder.com/data/icons/basic-content/24/_elements-64.png', 'Work-Area', 'lightsalmon');
+        this._button = this.createToolbarButton('workarea-button', 'https://cdn0.iconfinder.com/data/icons/basic-content/24/_elements-64.png', 'Work-Area', 'lightseagreen');
         this._button.onClick = async () => {
             this._panel.setVisible(!this._panel.isVisible());
             this._button.setState(this._panel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
