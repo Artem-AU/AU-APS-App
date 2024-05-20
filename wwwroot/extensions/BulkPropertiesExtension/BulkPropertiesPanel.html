@@ -1,0 +1,29 @@
+<div id="dashboard_div" style="height: 100%; display: flex; flex-direction: row; justify-content: flex-end;">
+    <div id="table_div" style="background-color: lightgrey; min-width: 600px; overflow: auto;">
+        Table Div
+    </div>
+    <div id="settings_div" style="background-color: lightsteelblue; min-width: 200px; width: 200px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box;">
+        <div id="Modify" style="display: flex; flex-direction: column;">
+            <span class="m-1 border-bottom font-weight-bold" style="font-size: 20px; color: black; --bs-border-color: black;">
+                Filters:
+            </span>
+            <div class="m-2 form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="modelSelectionSwitch">
+                <label class="form-check-label" for="modelSelectionSwitch">Model Selection</label>
+            </div>
+            <div id="settingsSelector_div" style="background-color: lightsteelblue; flex-grow: 1; box-sizing: border-box; width: 100%;">
+                <label for="propertySetSelect">Property Set:</label>
+                <select class="form-select" multiple aria-label="Multiple select example" style="box-sizing: border-box;">
+                </select>
+            </div>
+        </div>
+        <div id="Buttons" style="display: flex; flex-direction: column;">
+            <button id="update_table_button" class="btn btn-light m-2 btn-sm">
+                Update Table
+            </button>
+            <button id="download_table_button" class="btn btn-primary m-2 btn-sm">
+                Download
+            </button>
+        </div>
+    </div>
+</div>

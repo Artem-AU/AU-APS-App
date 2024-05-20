@@ -84,11 +84,13 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
         const data = [header, ...dataRows];
 
         // Return the data
+        console.log("data", data);
         return data;
     }
 
     drawChart(prop) {
         const chartData = this.defineChartData(prop);
+        console.log("chartData", chartData);
 
         const dataTable = new google.visualization.DataTable();
 
@@ -120,7 +122,75 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
             isStacked: true
         };
 
+        console.log("dataTable", dataTable);
+
         const chart = new google.visualization.BarChart(this.chartDiv);
         chart.draw(dataTable, options);
+
+        // Add a 'select' event listener to the chart
+        google.visualization.events.addListener(chart, 'select', () => {
+            const selectedItem = chart.getSelection()[0];
+            if (selectedItem) {
+                const key = dataTable.getValue(selectedItem.row, 0); // 0 is the column index for the key
+                console.log('Selected key:', key);
+
+                // Get the value of the selected segment
+                const selectedValue = dataTable.getValue(selectedItem.row, selectedItem.column);
+                console.log('Selected value:', selectedValue);
+
+                let selectedDbids = []
+
+                // Find the data for the selected key
+                const selectedData = chartData.find(item => item[0] === key);
+                if (selectedData && selectedData.length > selectedItem.column) {
+                    selectedDbids = selectedData[selectedItem.column];
+                    console.log('Selected Dbids:', selectedDbids);
+                    //log modelname
+                    console.log('Model Name:', firstItem[selectedItem.column]);
+                    // Do something with selectedDbids...
+                }
+
+
+                // Extract the dbId values
+                // let dbIds = selectedDbids;  // Adjust this line as needed based on the structure of rowData
+
+                // Get the model name
+                let modelName = firstItem[selectedItem.column];
+
+                // Initialize model to null
+                let model = null;
+
+                // Iterate over the keys of targetNodesMap
+                for (let [key, value] of this.extension.targetNodesMap.entries()) {
+                    // Get the name of the model
+                    let name = this.extension.getFileInfo(key, "name");
+
+                    // If the name matches the model name, set the model to key
+                    if (name === modelName) {
+                        model = key;
+                        break;
+                    }
+                }
+
+                // If model is not null, create the selection definition and select the elements
+                if (model) {
+                    // Create the selection definition
+                    let selectionDef = {
+                        model: model,
+                        ids: [selectedDbids],
+                        // selectionType: 3  // Replace 1 with the actual selection type
+                    };
+
+                    // Select the corresponding model elements in the viewer
+                    this.extension.viewer.setAggregateSelection([selectionDef], true);
+
+                    // Isolate and fit the view to the selected elements
+                    // Note: isolate and fitToView methods do not support aggregate selection directly
+                    // You may need to iterate over the models and call these methods for each model
+                    this.extension.viewer.isolate(selectedDbids, model);
+                    this.extension.viewer.fitToView(selectedDbids, model);
+                }
+            }
+        });
     }
 }

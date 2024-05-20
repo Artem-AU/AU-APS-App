@@ -20,18 +20,28 @@ class LoggerExtension extends BaseExtension {
     async onModelLoaded(model) {
         await super.onModelLoaded(model);
         console.log('---LoggerExtension.js onModelLoaded targetNodesMap:', this.targetNodesMap);
+
+        // // Get the instance of the LevelsExtension
+        // let levelsExtension = this.viewer.getExtension('Autodesk.AEC.LevelsExtension');
+        // console.log('---LoggerExtension.js onModelLoaded levelsExtension:', levelsExtension);
+
+        // // Iterate over all levels
+        // for (let levelIndex = 0; levelIndex < levelsExtension.aecModelData.levels.length; levelIndex++) {
+        //     let zRange = levelsExtension.getZRange(levelIndex);
+        //     // console.log(`Z range of level ${levelIndex}:`, zRange);
+        // }
     }
 
     onModelUnloaded(model) {
         super.onModelUnloaded(model);
-        console.log('---LoggerExtension.js onModelUnloaded targetNodesMap:', this.targetNodesMap);
+        console.log('---LoggerExtension.js onModelUnloaded targetNodesMap:', this.targetNodesMap);       
     }
 
-    async onSelectionChanged(model, dbids) {
+    onSelectionChanged(model, dbids) {
         super.onSelectionChanged(model, dbids);
-        console.log('Selection has changed', dbids);
-        // console.log('Logger onSelectionChanged Target nodes:', this.targetNodesMap);
 
+        // let modelToFragIdsMap = this.getFragmentsForSelection();
+        // console.log("--- getFragmentsForModels:", modelToFragIdsMap);
     }
 
     onIsolationChanged(model, dbids) {

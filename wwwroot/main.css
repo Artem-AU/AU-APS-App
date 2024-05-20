@@ -2,15 +2,17 @@ body, html {
     margin: 0;
     padding: 0;
     height: 100vh;
-    font-family: ArtifaktElement;
+    /* font-family: ArtifaktElement; */
 }
 
-#header, #preview, #overlay {
+#titleBlock, #preview, #overlay {
     position: absolute;
     width: 100%;
 }
 
-#header {
+#titleBlock {
+    /* box-sizing: content-box; Default value, padding and border are not included in width/height */
+
     height: 3em;
     display: flex;
     flex-flow: row nowrap;
@@ -49,14 +51,14 @@ body, html {
     z-index: 1;
 }
 
-#header > * {
+#titleBlock > * {
     height: 2em;
     margin: 0 0.5em;
     font-size: 1em;
-    font-family: ArtifaktElement;
+    /* font-family: ArtifaktElement; */
 }
 
-#header .title {
+#titleBlock .title {
     flex: 0 0 auto;
     height: auto;
 }
@@ -128,14 +130,14 @@ label {
 
 .googleTableHeader {
     color: black;
-    font-family: ArtifaktElement;
+    /* font-family: ArtifaktElement; */
     font-weight: bold;
     background-color: lightsalmon;
 }
 
 .googleTableRows {
     color: black;
-    font-family: ArtifaktElement;
+    /* font-family: ArtifaktElement; */
 }
 
 .google-visualization-controls-categoryfilter {

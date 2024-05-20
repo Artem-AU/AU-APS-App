@@ -6,7 +6,8 @@ import './extensions/DataGridExtension.js';
 import './extensions/ReconstructPropsExtension.js';
 import './extensions/SearchExtension.js';
 import './extensions/PolyCountExtension.js';
-import './extensions/BulkPropertiesExtension.js';
+import './extensions/BulkPropertiesExtension/BulkPropertiesExtension.js';
+import './extensions/WorkAreaExtension/WorkAreaExtension.js';
 import './extensions/SceneBuilderExtension.js';
 import './extensions/TestExtension.js';
 // import './extensions/IddPipelineExtension.js';
@@ -39,16 +40,17 @@ export function initViewer(container) {
                         'Autodesk.Explode',
                         'LoggerExtension',
                         // 'SummaryExtension',
-                        // 'HistogramExtension',
+                        'HistogramExtension',
                         // 'DataGridExtension',
                         // 'ReconstructPropsExtension',
-                        // 'BulkPropertiesExtension',
+                        'BulkPropertiesExtension',
                         // 'SearchExtension',
-                        // 'PolyCountExtension',
-                        'TestExtension',
+                        'PolyCountExtension',
+                        // 'TestExtension',
+                        'WorkAreaExtension',
                         // "SceneBuilderExtension",
                         // 'IddPipelineExtension',
-                        // 'QtyHistogramExtension',
+                        'QtyHistogramExtension',
                     ]
                 }
             };

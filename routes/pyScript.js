@@ -4,17 +4,13 @@ const path = require('path');
 
 const { spawn } = require('child_process');
 
-router.get('/run-script', (req, res) => {
-    let length = req.query.length || 5;
-    let height = req.query.height || 3;
-    let thickness = req.query.thickness || 0.2;
+router.post('/run-script', express.json(), (req, res) => {
+    let paramsArray = req.body;
 
-    console.log(`Length: ${length}`);
-    console.log(`Height: ${height}`);
-    console.log(`Thickness: ${thickness}`);
+    console.log(`Params Array: ${JSON.stringify(paramsArray)}`);
 
     let process = spawn('C:/Users/aruzdyak/AppData/Local/Programs/Python/Python310/python.exe', 
-        [path.join(__dirname, '../createIfc.py'), length.toString(), height.toString(), thickness.toString()]);
+        [path.join(__dirname, '../createIfc.py'), JSON.stringify(paramsArray)]);
 
     process.stdout.on('data', (data) => {
         console.log(`stdout: ${data.toString()}`);

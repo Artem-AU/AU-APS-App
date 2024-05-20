@@ -177,6 +177,26 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
         return dbIdTofragId;
     }
 
+    getFragmentsForSelection() {
+        let modelToFragIdsMap = new Map();
+        let aggregateSelection = this.viewer.getAggregateSelection();
+        if (aggregateSelection.length > 0) {
+            aggregateSelection.forEach(selection => {
+                let currentModel = selection.model;
+                let instanceTree = currentModel.getData().instanceTree;
+                let fragIds = [];
+                let selectedDbIds = selection.selection;
+                selectedDbIds.forEach(dbId => {
+                    instanceTree.enumNodeFragments(dbId, (fragId) => {
+                        fragIds.push(fragId);
+                    }, true);
+                });
+                modelToFragIdsMap.set(currentModel, fragIds);
+            });
+        }
+        return modelToFragIdsMap;
+    }
+
     createToolbarButton(buttonId, buttonIconUrl, buttonTooltip, buttonColor) {
         let group = this.viewer.toolbar.getControl('dashboard-toolbar-group');
         if (!group) {
