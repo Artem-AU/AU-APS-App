@@ -30,6 +30,11 @@
             <input class="form-check-input" type="checkbox" role="switch" id="modelSelectionSwitch" data-bs-toggle="tooltip" data-bs-placement="left" title="Turn ON and select model elements to define WorkArea">
             <label class="form-check-label" for="modelSelectionSwitch">Model Selection</label>
         </div>
+        <div class="m-2">
+            <button class="btn btn-primary btn-sm" type="button" id="hideMappedButton" disabled data-bs-toggle="tooltip" data-bs-placement="top" title="Click to hide mapped elements">
+                Hide Mapped Elements
+            </button>
+        </div>
         <!-- Input group with label and two select elements -->
         <div class="input-group input-group-sm mb-3 px-2" style="box-sizing: border-box;">
             <!-- Label -->
@@ -47,7 +52,7 @@
             </select>
         </div>
         <div class="input-group input-group-sm mb-3 px-2" style="box-sizing: border-box;">
-            <button class="btn btn-primary" type="button" disabled>Create WorkArea</button>
+            <button id="createWorkAreaButton" class="btn btn-primary" type="button" disabled>Create WorkArea</button>
             <input type="text" class="form-control" placeholder="Specify WorkArea Code..." aria-label="WorkArea Name" disabled readonly>
         </div>
     </div>

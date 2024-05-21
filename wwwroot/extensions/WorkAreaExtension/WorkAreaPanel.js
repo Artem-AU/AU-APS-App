@@ -34,9 +34,10 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
                 this.subzoneInput = document.getElementById('subzone');
                 this.workareaInput = document.getElementById('workarea');
                 this.modelSelectionSwitch = document.getElementById('modelSelectionSwitch');
+                this.hideMappedButton = document.getElementById('hideMappedButton');
                 this.propertyDropdown = document.getElementById('propertyDropdown');
                 this.valueDropdown = document.getElementById('valueDropdown');
-                this.createWorkAreaButton = document.querySelector('#workarea_div .btn');
+                this.createWorkAreaButton = document.getElementById('createWorkAreaButton');
                 this.workAreaCodeInput = document.querySelector('#workarea_div .form-control');
                 this.mappingDropdown = document.getElementById('mappingDropdown');
                 this.downloadMappingButton = document.querySelector('#mapping_div .btn');
@@ -105,6 +106,14 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
                     }
                 });
 
+                // Add an event listener for the click event
+                this.hideMappedButton.addEventListener('click', () => {
+                    for (let mesh of this.extension.bBoxMeshes) {
+                        this.hideModelElements(mesh);
+                    }
+                    console.log('Hide Mapped Elements button clicked!');
+                });
+
                 this.valueDropdown.addEventListener('change', () => {
                     if (this.valueDropdown.value && this.modelSelectionSwitch.checked) {
                         this.createWorkAreaButton.disabled = false;
@@ -114,9 +123,9 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
                 });
 
                 // Add an event listener for the click event
-                this.createWorkAreaButton.addEventListener('click', () => {
+                this.createWorkAreaButton.addEventListener('click', async () => {
                     // Do some stuff here
-                    this.createWorkArea();
+                    await this.createWorkArea();
                     this.propertyDropdown.innerHTML = '';
                     this.valueDropdown.innerHTML = '';
                     this.workareaInput.value = '';
@@ -158,26 +167,38 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
     //     }
     // }
 
-    createWorkArea() {
+    async createWorkArea() {
 
         this.extension.viewer.impl.removeOverlayScene('temp-overlay');
-
+        // Turn off the switch
+        this.modelSelectionSwitch.checked = false;
+        this.createWorkAreaButton.disabled = true;
+        this.hideMappedButton.disabled = false;
         this.assignUserDataToMesh();
+
+        await this.addFilteredDbidsToMesh();
+
         
         this.updateMappingDropdown();
 
         console.log("this.tempBboxMesh", this.extension.tempBboxMesh)
 
         this.convertTempMeshToPermMesh();
+        this.hideModelElements(this.extension.tempBboxMesh);
 
-        // Turn off the switch
-        this.modelSelectionSwitch.checked = false;
 
-        this.createWorkAreaButton.disabled = true;
 
         // // Change the button class to 'btn-secondary'
         // this.createWorkAreaButton.classList.remove('btn-primary');
         // this.createWorkAreaButton.classList.add('btn-secondary');
+    }
+
+    hideModelElements(mesh) {
+        let nodes = mesh.userData.filteredDbids;
+        let model = mesh.userData.model;
+
+        // Hide the nodes in the model
+        this.extension.viewer.hide(nodes, model);
     }
 
     // Helper method to add a badge
@@ -255,7 +276,7 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
 
     async downloadMapping() {
         
-        await this.addFilteredDbidsToMesh();
+        // await this.addFilteredDbidsToMesh();
 
         let csvData = [];
         let mappingOptions = Array.from(this.mappingDropdown.options)
@@ -326,37 +347,68 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
         document.body.removeChild(a);
     }
 
+    // addFilteredDbidsToMesh() {
+    //     let promises = this.extension.bBoxMeshes.map(mesh => {
+    //         let { model, dbids, filter } = mesh.userData;
+    //         let keys = Object.keys(filter);
+    //         let filterValues = Object.values(filter).flat();
+    //         let categoryFilter = keys.map(key => key.split('/')[0]);
+    //         let propFilter = keys.map(key => key.split('/')[1]);
+    //         let options = {
+    //             propFilter: propFilter,
+    //             categoryFilter: categoryFilter,
+    //             ignoreHidden: true,
+    //             needsExternalId: false
+    //         };
+
+    //         return new Promise((resolve, reject) => {
+    //             model.getBulkProperties2(dbids, options, 
+    //                 properties => {
+    //                     let filteredDbids = properties.filter(item => filterValues.includes(item.properties[0].displayValue)).map(item => item.dbId);
+    //                     mesh.userData.filteredDbids = filteredDbids;
+    //                     resolve();
+    //                 },
+    //                 error => {
+    //                     console.error(`Failed to get properties for dbids:`, error);
+    //                     reject(error);
+    //                 }
+    //             );
+    //         });
+    //     });
+
+    //     return Promise.all(promises);
+    // }
+
     addFilteredDbidsToMesh() {
-        let promises = this.extension.bBoxMeshes.map(mesh => {
-            let { model, dbids, filter } = mesh.userData;
-            let keys = Object.keys(filter);
-            let filterValues = Object.values(filter).flat();
-            let categoryFilter = keys.map(key => key.split('/')[0]);
-            let propFilter = keys.map(key => key.split('/')[1]);
-            let options = {
-                propFilter: propFilter,
-                categoryFilter: categoryFilter,
-                ignoreHidden: true,
-                needsExternalId: false
-            };
+        let mesh = this.extension.tempBboxMesh;
+        let { model, dbids, filter } = mesh.userData;
+        let keys = Object.keys(filter);
+        let filterValues = Object.values(filter).flat();
+        let categoryFilter = keys.map(key => key.split('/')[0]);
+        let propFilter = keys.map(key => key.split('/')[1]);
+        let options = {
+            propFilter: propFilter,
+            categoryFilter: categoryFilter,
+            ignoreHidden: true,
+            needsExternalId: false
+        };
 
-            return new Promise((resolve, reject) => {
-                model.getBulkProperties2(dbids, options, 
-                    properties => {
-                        let filteredDbids = properties.filter(item => filterValues.includes(item.properties[0].displayValue)).map(item => item.dbId);
-                        mesh.userData.filteredDbids = filteredDbids;
-                        resolve();
-                    },
-                    error => {
-                        console.error(`Failed to get properties for dbids:`, error);
-                        reject(error);
-                    }
-                );
-            });
+        return new Promise((resolve, reject) => {
+            model.getBulkProperties2(dbids, options, 
+                properties => {
+                    let filteredDbids = properties.filter(item => filterValues.includes(item.properties[0].displayValue)).map(item => item.dbId);
+                    mesh.userData.filteredDbids = filteredDbids;
+                    resolve();
+                },
+                error => {
+                    console.error(`Failed to get properties for dbids:`, error);
+                    reject(error);
+                }
+            );
         });
-
-        return Promise.all(promises);
     }
+
+
 
     updateMappingDropdown() {
         // Get the options of the mappingDropdown and propertyDropdown elements
