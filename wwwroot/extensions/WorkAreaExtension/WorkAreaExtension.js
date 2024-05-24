@@ -74,7 +74,7 @@ class WorkAreaExtension extends BaseExtension {
     onSelectionChanged(model, dbids) {
         super.onSelectionChanged(model, dbids);
         const aggregateSelection = this.viewer.getAggregateSelection();
-        console.log('---LoggerExtension.js onSelectionChanged aggregateSelection:', aggregateSelection);
+        // console.log('---LoggerExtension.js onSelectionChanged aggregateSelection:', aggregateSelection);
 
         // Check if aggregateSelection[0] is defined
         if (aggregateSelection[0]) {

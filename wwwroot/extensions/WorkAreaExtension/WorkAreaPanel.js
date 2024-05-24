@@ -17,14 +17,18 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.container.appendChild(this.closer);
 
         // Fetch the HTML file
-        fetch("/extensions/WorkAreaExtension/WorkAreaPanel.html")
+        fetch("/extensions/WorkAreaExtension/test.html")
             .then(response => response.text())
             .then(data => {
                 // Create a new div element
                 const newDiv = document.createElement("div");
-                // Set its innerHTML to the fetched HTML
-                newDiv.style.width = "100%";
-                newDiv.style.height = `calc(100% - 50px)`;
+                newDiv.classList.add('bootstrap-contents-div');
+                // newDiv.style.display = 'flex';
+                // newDiv.style.flexDirection = 'column';
+                // // Set its innerHTML to the fetched HTML
+                // // newDiv.style.width = "100%";
+                // newDiv.style.height = `calc(100% - 50px)`;
+                // newDiv.style.setProperty("box-sizing", "border-box", "important");
                 newDiv.innerHTML = data;
                 // Append the new div to the container
                 this.container.appendChild(newDiv);
@@ -35,13 +39,14 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
                 this.workareaInput = document.getElementById('workarea');
                 this.modelSelectionSwitch = document.getElementById('modelSelectionSwitch');
                 this.hideMappedButton = document.getElementById('hideMappedButton');
+                this.hideWorkAreasButton = document.getElementById('hideWorkAreas');
                 this.propertyDropdown = document.getElementById('propertyDropdown');
                 this.valueDropdown = document.getElementById('valueDropdown');
                 this.createWorkAreaButton = document.getElementById('createWorkAreaButton');
-                this.workAreaCodeInput = document.querySelector('#workarea_div .form-control');
+                this.workAreaCodeInput = document.getElementById('workAreaCodeInput');
                 this.mappingDropdown = document.getElementById('mappingDropdown');
-                this.downloadMappingButton = document.querySelector('#mapping_div .btn');
-                this.createIfcButton = document.querySelector('#ifc_div .btn');
+                this.downloadMappingButton = document.getElementById('downloadMappingButton');
+                this.createIfcButton = document.getElementById('createIfcButton');
 
                 // Initialize tooltip for modelSelectionSwitch
                 const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
@@ -174,6 +179,7 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.modelSelectionSwitch.checked = false;
         this.createWorkAreaButton.disabled = true;
         this.hideMappedButton.disabled = false;
+        this.hideWorkAreasButton.disabled = false;
         this.assignUserDataToMesh();
 
         await this.addFilteredDbidsToMesh();
@@ -195,6 +201,7 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
 
     hideModelElements(mesh) {
         let nodes = mesh.userData.filteredDbids;
+        console.log("nodes", nodes)
         let model = mesh.userData.model;
 
         // Hide the nodes in the model
@@ -204,7 +211,7 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
     // Helper method to add a badge
     addBadge(input) {
         const badge = document.createElement('span');
-        badge.className = 'badge rounded-pill text-bg-warning position-absolute top-0 start-100 translate-middle';
+        badge.className = 'badge rounded-pill text-bg-warning position-absolute top-0 end-0 translate-middle-y';
         badge.innerText = '!';
         input.parentNode.appendChild(badge);
     }

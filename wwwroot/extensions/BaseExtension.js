@@ -51,7 +51,10 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
 
     onIsolationChanged(model, dbids) {}
 
-    onGeometryLoaded(model) {}
+    async onGeometryLoaded(model) {
+        const targetNodes = await this.findTargetNodes(model);
+        this.targetNodesMap.set(model, targetNodes); // Store targetNodes in the Map
+    }
 
     onExtensionLoaded(extensionId) {}
 

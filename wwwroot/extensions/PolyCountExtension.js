@@ -47,10 +47,12 @@ class PolyCountExtension extends BaseExtension {
 
     async onModelLoaded(model) {
         await super.onModelLoaded(model);
+        console.log('---PolyCountExtension onModelLoaded model loaded:', model);
     }
 
-    onGeometryLoaded(model) {
-        super.onGeometryLoaded(model);
+    async onGeometryLoaded(model) {
+        await super.onGeometryLoaded(model);
+        console.log('---PolyCountExtension onGeometryLoaded geometry loaded:', model);
 
         this.createAggregatedData();
         if (this._panel.isVisible()) {
@@ -68,11 +70,15 @@ class PolyCountExtension extends BaseExtension {
     }
 
     createAggregatedData() {
+        console.log('---PolyCountExtension createAggregatedData this.targetNodesMap:', this.targetNodesMap);
         this.aggregatedData = [];
         for (let [model, targetNodes] of this.targetNodesMap.entries()) {
             const modelName = this.getFileInfo(model, "name");
+            console.log('---PolyCountExtension createAggregatedData modelName:', modelName);
             const modelData = this.createData(model, targetNodes);
+            console.log('---PolyCountExtension createAggregatedData modelData:', modelData);
             const modelPolycount = model.getData().instanceTree.fragList.geoms.instancePolyCount;
+            console.log('---PolyCountExtension createAggregatedData modelPolycount:', model.getData().instanceTree);
             this.aggregatedData.push({ modelName, modelData, modelPolycount });
         }
     }

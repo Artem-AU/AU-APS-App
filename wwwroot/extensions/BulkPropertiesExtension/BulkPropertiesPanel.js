@@ -32,8 +32,7 @@ export class BulkPropertiesPanel extends Autodesk.Viewing.UI.DockingPanel {
                 // Append the new div to the container
                 this.container.appendChild(newDiv);
 
-                this.modelSelectionSwitch = document.getElementById('modelSelectionSwitch');
-
+                this.modelSelectionSwitch = newDiv.querySelector('#modelSelectionSwitch');
                 // Get the select element
                 this.columnSelector = document.querySelector('#settingsSelector_div select');
 

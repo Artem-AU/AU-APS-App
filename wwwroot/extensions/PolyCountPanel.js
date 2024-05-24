@@ -95,8 +95,10 @@ export class PolyCountPanel extends Autodesk.Viewing.UI.DockingPanel {
         const totalPolyCount = this.extension.aggregatedData.reduce((total, item) => {
             return total + item.modelPolycount;
         }, 0);
+        console.log('totalPolyCount:', totalPolyCount);
 
         const currentValue = this.gaugeData.getValue(0, 1);  // Get the current value
+        console.log('currentValue:', currentValue);
 
         const options = {
             width: '100%', 

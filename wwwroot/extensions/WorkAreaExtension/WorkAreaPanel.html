@@ -1,4 +1,4 @@
-<div id="dashboard_div" class="text-bg-light" style="height: 100%; display: flex; flex-direction: column; background-color: white; box-sizing: border-box; padding-left: 10px; padding-right: 10px;">
+<div id="dashboard_div" class="container justify-content-center text-bg-light" style="height: 100%; display: flex; flex-direction: column; background-color: white; box-sizing: border-box; padding-left: 10px; padding-right: 10px;">
     <div id="property_div" class="pb-3" style="width: 100%; box-sizing: border-box;">
         <form style="box-sizing: border-box;">
             <h5 class="my-2">Define Property:</h5>
@@ -24,16 +24,22 @@
             </div>
         </form>
     </div>
-    <div id="workarea_div" class="pb-3" style="width: 100%; box-sizing: border-box;">
+    <div id="workarea_div" class=" row pb-3" style="width: 100%; box-sizing: border-box;">
         <h5 class="my-2 ">Add WorkArea:</h5>
         <div class="m-2 form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" id="modelSelectionSwitch" data-bs-toggle="tooltip" data-bs-placement="left" title="Turn ON and select model elements to define WorkArea">
             <label class="form-check-label" for="modelSelectionSwitch">Model Selection</label>
         </div>
-        <div class="m-2">
-            <button class="btn btn-primary btn-sm" type="button" id="hideMappedButton" disabled data-bs-toggle="tooltip" data-bs-placement="top" title="Click to hide mapped elements">
-                Hide Mapped Elements
-            </button>
+        <div class="row flex-nowrap">
+            <div class="col-7 m-2">
+                <button class="btn btn-primary btn-sm" type="button" id="hideMappedButton" disabled data-bs-toggle="tooltip" data-bs-placement="left" title="Click to hide mapped elements">
+                    Hide Mapped Elements
+                </button>
+            </div>
+            <div class="col-5 m-2 pe-0 form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="hideWorkAreas" data-bs-toggle="tooltip" data-bs-placement="right" title="Click to hide WorkAreas">
+                <label class="form-check-label p-0" for="hideWorkAreas">Hide WorkAreas</label>
+            </div>
         </div>
         <!-- Input group with label and two select elements -->
         <div class="input-group input-group-sm mb-3 px-2" style="box-sizing: border-box;">
