@@ -45,16 +45,8 @@ class WorkAreaExtension extends BaseExtension {
         this._button.onClick = async () => {
             this._panel.setVisible(!this._panel.isVisible());
             this._button.setState(this._panel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
-            if (this._panel.isVisible()) {
-
-                // this.runPythonScript(10, 3, 0.1);
-            }
-
             // if (this._panel.isVisible()) {
-                // Get the dimensions of the geometry
-                // let params = this.mesh.geometry.parameters;
-                // console.log('---LoggerExtension.js onToolbarCreated params:', params.width, params.depth / 2, params.height);
-                // this.runPythonScript(params.width, params.depth, params.height);
+
             // }
         };
     }
@@ -74,7 +66,6 @@ class WorkAreaExtension extends BaseExtension {
     onSelectionChanged(model, dbids) {
         super.onSelectionChanged(model, dbids);
         const aggregateSelection = this.viewer.getAggregateSelection();
-        // console.log('---LoggerExtension.js onSelectionChanged aggregateSelection:', aggregateSelection);
 
         // Check if aggregateSelection[0] is defined
         if (aggregateSelection[0]) {
@@ -83,28 +74,18 @@ class WorkAreaExtension extends BaseExtension {
             this.selectedModel = aggregateSelection[0].model;
 
             if (this._panel.modelSelectionSwitch.checked) {
-                // do something
 
                 this.createBboxFromFragments();
 
-                // // Change the button class to 'btn-primary'
-                // this._panel.createWorkAreaButton.classList.remove('btn-secondary');
-                // this._panel.createWorkAreaButton.classList.add('btn-primary');
-
                 const workAreaToDbIds = this.createWorkAreaToDbIds();
-
-                console.log("workAreaToDbIds", workAreaToDbIds);
 
                 // Extract dbids array
                 this.workAreaDbIds = workAreaToDbIds.undefined;
-
-                console.log("this.workAreaDbIds", this.workAreaDbIds)
 
                 // Get property set for the dbids
                 this.selectedModel.getPropertySetAsync(this.workAreaDbIds, { ignoreHidden: true })
                     .then(propertySet => {
                         // Get the select elements
-                        // let propertyDropdown = document.getElementById('propertyDropdown');
                         let valueDropdown = document.getElementById('valueDropdown');
 
                         // Get the keys from the property set map
@@ -124,9 +105,6 @@ class WorkAreaExtension extends BaseExtension {
                             }
                             this._panel.propertyDropdown.appendChild(option);
                         });
-
-                        console.log("this._panel.propertyDropdown.value", this._panel.propertyDropdown.value)
-
 
                         // Add an event listener to the property dropdown
                         this._panel.propertyDropdown.addEventListener('change', function() {
@@ -169,6 +147,13 @@ class WorkAreaExtension extends BaseExtension {
 
                     });
             }
+        }
+    }
+
+    onShowAll(ev) {
+        // Handle show all event
+        if (this.bBoxMeshes && this.bBoxMeshes.length > 0) {
+            this._panel.hideMappedSwitch.checked = false;
         }
     }
 
@@ -316,11 +301,6 @@ class WorkAreaExtension extends BaseExtension {
         for (const [dbId, cog] of Object.entries(this.dbIdToCOG)) {
             // Check if the COG is contained within the box
             if (box.containsPoint(cog)) {
-                // // If the workArea does not exist in the object, add it with an empty array
-                // if (!workAreaToDbIds[this.tempBboxMesh.workArea]) {
-                //     workAreaToDbIds[this.tempBboxMesh.workArea] = [];
-                // }
-
                 // Add the dbId to the array under the corresponding workArea
                 workAreaToDbIds[this.tempBboxMesh.workArea].push(Number(dbId)); 
             }
@@ -343,32 +323,12 @@ class WorkAreaExtension extends BaseExtension {
         document.body.removeChild(a);
     }
     
-
-    // runPythonScript(paramsArray) {
-    //     console.log("paramsArray:", paramsArray);
-    //     console.log("JSON stringified paramsArray:", JSON.stringify(paramsArray));
-
-    //     fetch('http://localhost:8080/run-script', {
-    //         method: 'POST',
-    //         headers: {
-    //             'Content-Type': 'application/json',
-    //         },
-    //         body: JSON.stringify(paramsArray),
-    //     })
-    //     .then(response => response.text())
-    //     .then(data => console.log(data))
-    //     .catch((error) => {
-    //         console.error('Error:', error);
-    //     });
-    // }
-
-
     runPythonScript(paramsArray) {
         const SERVER_URL = window.location.hostname.includes('localhost') ? 'http://localhost:8080' : 'https://au-aps-app.azurewebsites.net';
 
-        console.log("SERVER_URL:", SERVER_URL);
-        console.log("paramsArray:", paramsArray);
-        console.log("JSON stringified paramsArray:", JSON.stringify(paramsArray));
+        // console.log("SERVER_URL:", SERVER_URL);
+        // console.log("paramsArray:", paramsArray);
+        // console.log("JSON stringified paramsArray:", JSON.stringify(paramsArray));
 
         fetch(`${SERVER_URL}/run-script`, {
             method: 'POST',

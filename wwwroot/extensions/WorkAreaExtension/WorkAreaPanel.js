@@ -17,7 +17,7 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.container.appendChild(this.closer);
 
         // Fetch the HTML file
-        fetch("/extensions/WorkAreaExtension/test.html")
+        fetch("/extensions/WorkAreaExtension/WorkAreaPanel.html")
             .then(response => response.text())
             .then(data => {
                 // Create a new div element
@@ -34,19 +34,19 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
                 this.container.appendChild(newDiv);
 
                 // Get UI elements
-                this.zoneInput = document.getElementById('zone');
-                this.subzoneInput = document.getElementById('subzone');
-                this.workareaInput = document.getElementById('workarea');
-                this.modelSelectionSwitch = document.getElementById('modelSelectionSwitch');
-                this.hideMappedButton = document.getElementById('hideMappedButton');
-                this.hideWorkAreasButton = document.getElementById('hideWorkAreas');
-                this.propertyDropdown = document.getElementById('propertyDropdown');
-                this.valueDropdown = document.getElementById('valueDropdown');
-                this.createWorkAreaButton = document.getElementById('createWorkAreaButton');
-                this.workAreaCodeInput = document.getElementById('workAreaCodeInput');
-                this.mappingDropdown = document.getElementById('mappingDropdown');
-                this.downloadMappingButton = document.getElementById('downloadMappingButton');
-                this.createIfcButton = document.getElementById('createIfcButton');
+                this.zoneInput = document.querySelector('#zone');
+                this.subzoneInput = document.querySelector('#subzone');
+                this.workareaInput = document.querySelector('#workarea');
+                this.modelSelectionSwitch = document.querySelector('#modelSelectionSwitch');
+                this.hideMappedSwitch = document.querySelector('#hideMappedSwitch');
+                this.hideWorkAreasSwitch = document.querySelector('#hideWorkAreasSwitch');
+                this.propertyDropdown = document.querySelector('#propertyDropdown');
+                this.valueDropdown = document.querySelector('#valueDropdown');
+                this.createWorkAreaButton = document.querySelector('#createWorkAreaButton');
+                this.workAreaCodeInput = document.querySelector('#workAreaCodeInput');
+                this.mappingDropdown = document.querySelector('#mappingDropdown');
+                this.downloadMappingButton = document.querySelector('#downloadMappingButton');
+                this.createIfcButton = document.querySelector('#createIfcButton');
 
                 // Initialize tooltip for modelSelectionSwitch
                 const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
@@ -73,9 +73,7 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
 
                         // If all input fields are filled
                         if (this.zoneInput.value && this.subzoneInput.value && this.workareaInput.value) {
-                            // Perform an action
                             this.updateWorkAreaCode();
-                            console.log('All fields are filled');
                         }
                     });
                 });
@@ -112,11 +110,34 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
                 });
 
                 // Add an event listener for the click event
-                this.hideMappedButton.addEventListener('click', () => {
-                    for (let mesh of this.extension.bBoxMeshes) {
-                        this.hideModelElements(mesh);
+                this.hideMappedSwitch.addEventListener('click', () => {
+                    if (this.hideMappedSwitch.checked) {
+                        // Code to execute when the switch is checked
+                        for (let mesh of this.extension.bBoxMeshes) {
+                            this.hideModelElements(mesh);
+                        }
+                    } else {
+                        // Code to execute when the switch is unchecked
+                        this.extension.viewer.showAll();
                     }
-                    console.log('Hide Mapped Elements button clicked!');
+                });
+
+                // Add an event listener for the change event
+                this.hideWorkAreasSwitch.addEventListener('change', () => {
+                    if (this.hideWorkAreasSwitch.checked) {
+                        // Clear everything from the permanent overlay
+                        this.extension.viewer.impl.clearOverlay('perm-overlay');
+                    } else {
+                        // Iterate through this.extension.bBoxMeshes
+                        for (let mesh of this.extension.bBoxMeshes) {
+                            // Create an edges helper from the mesh
+                            let edges = new THREE.EdgesHelper(mesh, 0x000000);
+
+                            // Add the mesh and its edges to the permanent overlay
+                            this.extension.viewer.impl.addOverlay('perm-overlay', mesh);
+                            this.extension.viewer.impl.addOverlay('perm-overlay', edges);
+                        }
+                    }
                 });
 
                 this.valueDropdown.addEventListener('change', () => {
@@ -137,21 +158,24 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
                     this.downloadMappingButton.disabled = false;
                     this.updateWorkAreaCode();
                     this.createIfcButton.disabled = false;
-                    console.log('Button clicked!');
+                    this.hideMappedSwitch.disabled = false;
+                    this.hideMappedSwitch.checked = true;
+                    this.hideWorkAreasSwitch.disabled = false;
+
+                    // Trigger the click event on the hideMappedSwitch
+                    this.hideMappedSwitch.dispatchEvent(new Event('click'));
                 });
 
                 // Add an event listener for the click event
                 this.downloadMappingButton.addEventListener('click', () => {
                     // Do some stuff here
                     this.downloadMapping();
-                    console.log('Download button clicked!');
                 });
 
                 // Add an event listener for the click event
                 this.createIfcButton.addEventListener('click', () => {
                     // Do some stuff here
                     this.createIfc();
-                    console.log('IFC Download button clicked!');
                 });
 
             })
@@ -178,30 +202,17 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
         // Turn off the switch
         this.modelSelectionSwitch.checked = false;
         this.createWorkAreaButton.disabled = true;
-        this.hideMappedButton.disabled = false;
-        this.hideWorkAreasButton.disabled = false;
+        this.hideMappedSwitch.disabled = false;
+        this.hideWorkAreasSwitch.disabled = false;
         this.assignUserDataToMesh();
-
         await this.addFilteredDbidsToMesh();
-
-        
         this.updateMappingDropdown();
-
-        console.log("this.tempBboxMesh", this.extension.tempBboxMesh)
-
         this.convertTempMeshToPermMesh();
         this.hideModelElements(this.extension.tempBboxMesh);
-
-
-
-        // // Change the button class to 'btn-secondary'
-        // this.createWorkAreaButton.classList.remove('btn-primary');
-        // this.createWorkAreaButton.classList.add('btn-secondary');
     }
 
     hideModelElements(mesh) {
         let nodes = mesh.userData.filteredDbids;
-        console.log("nodes", nodes)
         let model = mesh.userData.model;
 
         // Hide the nodes in the model
@@ -232,8 +243,6 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
             workArea: this.workareaInput.value
         };
 
-        console.log("this.extension.workAreaDbIds", this.extension.workAreaDbIds)
-
         // Write this.workAreaDbIds into tempBboxMesh under userData.dbids
         this.extension.tempBboxMesh.userData.dbids = this.extension.workAreaDbIds;
 
@@ -252,7 +261,6 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
     convertTempMeshToPermMesh() {
         // Add the tempBboxMesh to the bBoxMeshes array
         this.extension.bBoxMeshes.push(this.extension.tempBboxMesh);
-        console.log("this.bBoxMeshes", this.extension.bBoxMeshes)   
 
         // Get the matrix of the tempBboxMesh
         let matrix = this.extension.tempBboxMesh.matrix;
@@ -421,8 +429,6 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
         // Get the options of the mappingDropdown and propertyDropdown elements
         let mappingOptions = Array.from(this.mappingDropdown.options).filter(option => !option.disabled).map(option => option.value);
         let propertyOptions = Array.from(this.propertyDropdown.options).map(option => option.value);
-        console.log("mappingOptions.length", mappingOptions.length)
-        console.log("propertyOptions.length", propertyOptions.length)
 
         // Check if mappingDropdown has any options
         if (mappingOptions.length === 0) {
@@ -436,7 +442,6 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
         } else {
             // If yes, find the intersection of mappingOptions and propertyOptions
             let intersection = mappingOptions.filter(value => propertyOptions.includes(value));
-            console.log("intersection.length", intersection.length)
             // Clear the mappingDropdown
             this.mappingDropdown.innerHTML = '';
 

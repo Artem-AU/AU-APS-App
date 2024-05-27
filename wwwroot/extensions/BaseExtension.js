@@ -9,6 +9,11 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
         this._onModelUnloaded = (ev) => this.onModelUnloaded(ev.model);
         this.targetNodesMap = new Map(); // Initialize targetNodesMap after calling super
 
+        // Define new event handlers
+        this._onEscape = (ev) => this.onEscape(ev);
+        this._onShow = (ev) => this.onShow(ev);
+        this._onShowAll = (ev) => this.onShowAll(ev);
+
     }
 
     load() {
@@ -18,6 +23,11 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
         this.viewer.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, this._onGeometryLoaded);
         this.viewer.addEventListener(Autodesk.Viewing.EXTENSION_LOADED_EVENT, this._onExtensionLoaded);
         this.viewer.addEventListener(Autodesk.Viewing.MODEL_UNLOADED_EVENT, this._onModelUnloaded);
+
+        this.viewer.addEventListener(Autodesk.Viewing.ESCAPE_EVENT, this._onEscape);
+        this.viewer.addEventListener(Autodesk.Viewing.SHOW_EVENT, this._onShow);
+        this.viewer.addEventListener(Autodesk.Viewing.SHOW_ALL_EVENT, this._onShowAll);
+
         return true;
     }
 
@@ -28,6 +38,11 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
         this.viewer.removeEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, this._onGeometryLoaded);
         this.viewer.removeEventListener(Autodesk.Viewing.EXTENSION_LOADED_EVENT, this._onExtensionLoaded);
         this.viewer.removeEventListener(Autodesk.Viewing.MODEL_UNLOADED_EVENT, this._onModelUnloaded);
+
+        this.viewer.removeEventListener(Autodesk.Viewing.ESCAPE_EVENT, this._onEscape);
+        this.viewer.removeEventListener(Autodesk.Viewing.SHOW_EVENT, this._onShow);
+        this.viewer.removeEventListener(Autodesk.Viewing.SHOW_ALL_EVENT, this._onShowAll);
+
         return true;
     }
     
@@ -251,4 +266,21 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
             document.head.appendChild(el);
         });
     }
+
+    // Define new event handler methods
+    onEscape(ev) {
+        // Handle escape event
+        console.log('Escape event triggered');
+    }
+
+    onShow(ev) {
+        // Handle show event
+        console.log('Show event triggered');
+    }
+
+    onShowAll(ev) {
+        // Handle show all event
+        console.log('Show All event triggered');
+    }
+
 };
