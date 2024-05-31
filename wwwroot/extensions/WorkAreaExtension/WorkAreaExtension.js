@@ -11,6 +11,12 @@ class WorkAreaExtension extends BaseExtension {
 
     async load() {
         super.load();
+        
+        await Promise.all([
+            this.loadScript('https://unpkg.com/tabulator-tables@6.2.1/dist/js/tabulator.min.js', 'Tabulator'),
+            this.loadStylesheet('https://unpkg.com/tabulator-tables@6.2.1/dist/css/tabulator.min.css')
+        ]);
+
         console.log('WorkAreaExtension loaded.');
 
         // Create a permanent overlay

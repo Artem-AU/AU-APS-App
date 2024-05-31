@@ -4,8 +4,8 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.extension = extension;
         this.container.style.right = (options.x || 0) + 'px';
         this.container.style.top = (options.y || 0) + 'px';
-        this.container.style.width = (options.width || 400) + 'px';
-        this.container.style.height = (options.height || 800) + 'px';
+        this.container.style.width = (options.width || 700) + 'px';
+        this.container.style.height = (options.height || 650) + 'px';
     }
 
     initialize() {
@@ -23,17 +23,13 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
                 // Create a new div element
                 const newDiv = document.createElement("div");
                 newDiv.classList.add('bootstrap-contents-div');
-                // newDiv.style.display = 'flex';
-                // newDiv.style.flexDirection = 'column';
-                // // Set its innerHTML to the fetched HTML
-                // // newDiv.style.width = "100%";
-                // newDiv.style.height = `calc(100% - 50px)`;
-                // newDiv.style.setProperty("box-sizing", "border-box", "important");
                 newDiv.innerHTML = data;
                 // Append the new div to the container
                 this.container.appendChild(newDiv);
 
                 // Get UI elements
+                this.setUpPanel = document.querySelector('#setUpPanel');
+                this.workAreasReportPanel = document.querySelector('#workAreasReportPanel');
                 this.zoneInput = document.querySelector('#zone');
                 this.subzoneInput = document.querySelector('#subzone');
                 this.workareaInput = document.querySelector('#workarea');
@@ -47,6 +43,11 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
                 this.mappingDropdown = document.querySelector('#mappingDropdown');
                 this.downloadMappingButton = document.querySelector('#downloadMappingButton');
                 this.createIfcButton = document.querySelector('#createIfcButton');
+                this.reportDiv = document.querySelector('#report');
+                this.reportEditButton = document.querySelector('#reportEditButton');
+                this.reportDeleteButton = document.querySelector('#reportDeleteButton');
+                this.editForm = document.querySelector('#editForm');
+                this.cancelEdit = document.querySelector('#cancelEdit');
 
                 // Initialize tooltip for modelSelectionSwitch
                 const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
@@ -128,15 +129,7 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
                         // Clear everything from the permanent overlay
                         this.extension.viewer.impl.clearOverlay('perm-overlay');
                     } else {
-                        // Iterate through this.extension.bBoxMeshes
-                        for (let mesh of this.extension.bBoxMeshes) {
-                            // Create an edges helper from the mesh
-                            let edges = new THREE.EdgesHelper(mesh, 0x000000);
-
-                            // Add the mesh and its edges to the permanent overlay
-                            this.extension.viewer.impl.addOverlay('perm-overlay', mesh);
-                            this.extension.viewer.impl.addOverlay('perm-overlay', edges);
-                        }
+                        this.redrawMeshes();
                     }
                 });
 
@@ -150,12 +143,10 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
 
                 // Add an event listener for the click event
                 this.createWorkAreaButton.addEventListener('click', async () => {
-                    // Do some stuff here
                     await this.createWorkArea();
                     this.propertyDropdown.innerHTML = '';
                     this.valueDropdown.innerHTML = '';
                     this.workareaInput.value = '';
-                    this.downloadMappingButton.disabled = false;
                     this.updateWorkAreaCode();
                     this.createIfcButton.disabled = false;
                     this.hideMappedSwitch.disabled = false;
@@ -164,6 +155,27 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
 
                     // Trigger the click event on the hideMappedSwitch
                     this.hideMappedSwitch.dispatchEvent(new Event('click'));
+
+                    // Trigger the change event on the modelSelectionSwitch
+                    this.modelSelectionSwitch.dispatchEvent(new Event('change'));
+
+                    // this.createTabulatorTable(this.extension.bBoxMeshes);
+
+                    // Create the table if it doesn't exist, otherwise update the data
+                    if (!this.table) {
+                        this.createTabulatorTable(this.extension.bBoxMeshes);
+                    } else {
+                        this.table.setData(this.bBoxToTabulatorData(this.extension.bBoxMeshes));
+                    }
+                });
+
+                this.mappingDropdown.addEventListener('change', () => {
+                    // Check if any option is selected
+                    if (this.mappingDropdown.value) {
+                        this.downloadMappingButton.disabled = false;
+                    } else {
+                        this.downloadMappingButton.disabled = true;
+                    }
                 });
 
                 // Add an event listener for the click event
@@ -178,23 +190,127 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
                     this.createIfc();
                 });
 
+                this.reportEditButton.addEventListener('click', () => {
+                    this.toggleEditWorkAreaFormVisibility();
+                });
+
+                this.reportDeleteButton.addEventListener('click', () => {
+                    if (this.selectedRowData) {
+                        // Find the mesh with the selected UUID
+                        let meshToDelete = this.extension.bBoxMeshes.find(mesh => mesh.uuid === this.selectedRowData.MeshId);
+
+                        if (meshToDelete) {
+                            // Filter out the mesh from the bBoxMeshes array
+                            this.extension.bBoxMeshes = this.extension.bBoxMeshes.filter(mesh => mesh !== meshToDelete);
+
+                            // Delete the row from the Tabulator table
+                            this.table.deleteRow(this.selectedRowData.MeshId);
+
+                            this.redrawMeshes();
+                        }
+
+                        this.updateMappingDropdown();
+                    }
+                });
+
+                this.editForm.addEventListener('submit', (event) => {
+                    event.preventDefault(); // Prevent the form from submitting normally
+
+                    // Get the values from the form inputs
+                    let zoneEdit = document.getElementById('zoneEdit').value;
+                    let subzoneEdit = document.getElementById('subzoneEdit').value;
+                    let workareaEdit = document.getElementById('workareaEdit').value;
+
+                    // Get the MeshId from the selected row data
+                    let meshId = this.selectedRowData.MeshId;
+
+                    // Find the mesh with this id
+                    let mesh = this.extension.bBoxMeshes.find(mesh => mesh.uuid === meshId);
+
+                    // Override the values in mesh.userData.pds
+                    if (mesh) {
+                        mesh.userData.pds.zone = zoneEdit;
+                        mesh.userData.pds.subzone = subzoneEdit;
+                        mesh.userData.pds.workArea = workareaEdit;
+                    }
+
+                    // Update the table row with the new values
+                    this.table.setData(this.bBoxToTabulatorData(this.extension.bBoxMeshes));
+                    // this.table.updateData([{MeshId: meshId, Zone: zoneEdit, Subzone: subzoneEdit, WorkArea: workareaEdit}]);          
+                    this.toggleEditWorkAreaFormVisibility();
+                });
+
+                this.cancelEdit.addEventListener('click', () => {
+                    this.toggleEditWorkAreaFormVisibility();
+                });
+
+                this.createTabulatorTable(this.extension.bBoxMeshes);
+
             })
             .catch((error) => {
                 console.error('Error:', error);
             });
     }
 
-    // toggleButtonClass(button) {
-    //     if (button.classList.contains('btn-primary')) {
-    //         button.classList.remove('btn-primary');
-    //         button.classList.add('btn-secondary');
-    //         button.disabled = true;
-    //     } else if (button.classList.contains('btn-secondary')) {
-    //         button.classList.remove('btn-secondary');
-    //         button.classList.add('btn-primary');
-    //         button.disabled = false;
-    //     }
-    // }
+    toggleEditWorkAreaFormVisibility() {
+        if (this.editForm.classList.contains('visually-hidden')) {
+            // If the form is hidden, show it and add opacity to the panels
+            this.editForm.classList.remove('visually-hidden');
+            this.setUpPanel.classList.add('opacity-25', 'pe-none');
+            this.workAreasReportPanel.classList.add('opacity-25', 'pe-none');
+        } else {
+            // If the form is visible, hide it and remove opacity from the panels
+            this.editForm.classList.add('visually-hidden');
+            this.setUpPanel.classList.remove('opacity-25', 'pe-none');
+            this.workAreasReportPanel.classList.remove('opacity-25', 'pe-none');
+            // Clear the form values
+            document.getElementById('zoneEdit').value = '';
+            document.getElementById('subzoneEdit').value = '';
+            document.getElementById('workareaEdit').value = '';
+        }
+    }
+
+    bBoxToTabulatorData(bBoxMeshes) {
+        return bBoxMeshes.map(mesh => {
+            return {
+                MeshId: mesh.uuid,
+                Zone: mesh.userData.pds.zone,
+                Subzone: mesh.userData.pds.subzone,
+                WorkArea: mesh.userData.pds.workArea
+            };
+        });
+    }
+
+    createTabulatorTable(bBoxMeshes) {
+        // Create data array
+        let data = this.bBoxToTabulatorData(bBoxMeshes);
+
+        // Create Tabulator table
+        this.table = new Tabulator(this.reportDiv, {
+            index: "MeshId", // Use MeshId as the unique id for each row
+            layout: 'fitColumns',
+            selectableRows: 1,
+            data: data,
+            columns: [
+                {title: "Zone", field: "Zone"},
+                {title: "Subzone", field: "Subzone"},
+                {title: "WorkArea", field: "WorkArea"},
+            ],
+        });
+
+        // Add row selection event listener
+        this.table.on("rowSelected", (row) => {
+            this.selectedRowData = row.getData();
+            this.reportEditButton.disabled = false;
+            this.reportDeleteButton.disabled = false;
+        });
+
+        // Add row deselection event listener
+        this.table.on("rowDeselected", (row) => {
+            this.reportEditButton.disabled = true;
+            this.reportDeleteButton.disabled = true;
+        });
+    }
 
     async createWorkArea() {
 
@@ -206,9 +322,10 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.hideWorkAreasSwitch.disabled = false;
         this.assignUserDataToMesh();
         await this.addFilteredDbidsToMesh();
-        this.updateMappingDropdown();
         this.convertTempMeshToPermMesh();
+        this.updateMappingDropdown();
         this.hideModelElements(this.extension.tempBboxMesh);
+        console.log(this.extension.bBoxMeshes);
     }
 
     hideModelElements(mesh) {
@@ -256,6 +373,9 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
         // Write to the filter object of this.tempBboxMesh.userData
         this.extension.tempBboxMesh.userData.filter = {};
         this.extension.tempBboxMesh.userData.filter[selectedPset] = selectedValues;
+
+        // Write all values from this.propertyDropdown to userData.mappingOptions
+        this.extension.tempBboxMesh.userData.mappingOptions = Array.from(this.propertyDropdown.options).map(option => option.value);
     }
 
     convertTempMeshToPermMesh() {
@@ -275,6 +395,21 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
         // Add the tempBboxMesh and its edges to the permanent overlay
         this.extension.viewer.impl.addOverlay('perm-overlay', this.extension.tempBboxMesh);
         this.extension.viewer.impl.addOverlay('perm-overlay', edges);
+    }
+
+    redrawMeshes() {
+        // Clear everything from the permanent overlay
+        this.extension.viewer.impl.clearOverlay('perm-overlay');
+
+        // Iterate through the updated bBoxMeshes array
+        for (let mesh of this.extension.bBoxMeshes) {
+            // Create an edges helper from the mesh
+            let edges = new THREE.EdgesHelper(mesh, 0x000000);
+
+            // Add the mesh and its edges to the permanent overlay
+            this.extension.viewer.impl.addOverlay('perm-overlay', mesh);
+            this.extension.viewer.impl.addOverlay('perm-overlay', edges);
+        }
     }
 
     // Define a function to update the WorkArea Name field
@@ -362,38 +497,6 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
         document.body.removeChild(a);
     }
 
-    // addFilteredDbidsToMesh() {
-    //     let promises = this.extension.bBoxMeshes.map(mesh => {
-    //         let { model, dbids, filter } = mesh.userData;
-    //         let keys = Object.keys(filter);
-    //         let filterValues = Object.values(filter).flat();
-    //         let categoryFilter = keys.map(key => key.split('/')[0]);
-    //         let propFilter = keys.map(key => key.split('/')[1]);
-    //         let options = {
-    //             propFilter: propFilter,
-    //             categoryFilter: categoryFilter,
-    //             ignoreHidden: true,
-    //             needsExternalId: false
-    //         };
-
-    //         return new Promise((resolve, reject) => {
-    //             model.getBulkProperties2(dbids, options, 
-    //                 properties => {
-    //                     let filteredDbids = properties.filter(item => filterValues.includes(item.properties[0].displayValue)).map(item => item.dbId);
-    //                     mesh.userData.filteredDbids = filteredDbids;
-    //                     resolve();
-    //                 },
-    //                 error => {
-    //                     console.error(`Failed to get properties for dbids:`, error);
-    //                     reject(error);
-    //                 }
-    //             );
-    //         });
-    //     });
-
-    //     return Promise.all(promises);
-    // }
-
     addFilteredDbidsToMesh() {
         let mesh = this.extension.tempBboxMesh;
         let { model, dbids, filter } = mesh.userData;
@@ -423,36 +526,31 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
         });
     }
 
-
-
     updateMappingDropdown() {
-        // Get the options of the mappingDropdown and propertyDropdown elements
-        let mappingOptions = Array.from(this.mappingDropdown.options).filter(option => !option.disabled).map(option => option.value);
-        let propertyOptions = Array.from(this.propertyDropdown.options).map(option => option.value);
+        // Initialize an empty array to store the intersection
+        let intersection = [];
 
-        // Check if mappingDropdown has any options
-        if (mappingOptions.length === 0) {
-            // If no, populate all the options from propertyDropdown
-            propertyOptions.forEach(value => {
-                let option = document.createElement('option');
-                option.value = value;
-                option.text = value;
-                this.mappingDropdown.add(option);
-            });
-        } else {
-            // If yes, find the intersection of mappingOptions and propertyOptions
-            let intersection = mappingOptions.filter(value => propertyOptions.includes(value));
-            // Clear the mappingDropdown
-            this.mappingDropdown.innerHTML = '';
+        // Iterate over this.extension.bBoxMeshes
+        this.extension.bBoxMeshes.forEach((mesh, index) => {
+            // For the first mesh, assign its mappingOptions to intersection
+            if (index === 0) {
+                intersection = mesh.userData.mappingOptions;
+            } else {
+                // For subsequent meshes, find the intersection of userData.mappingOptions and intersection
+                intersection = intersection.filter(value => mesh.userData.mappingOptions.includes(value));
+            }
+        });
 
-            // Populate the mappingDropdown with the intersection options
-            intersection.forEach(value => {
-                let option = document.createElement('option');
-                option.value = value;
-                option.text = value;
-                this.mappingDropdown.add(option);
-            });
-        }
+        // Clear the mappingDropdown
+        this.mappingDropdown.innerHTML = '';
+
+        // Populate the mappingDropdown with the intersection options
+        intersection.forEach(value => {
+            let option = document.createElement('option');
+            option.value = value;
+            option.text = value;
+            this.mappingDropdown.add(option);
+        });
     }
 
     createIfc() {

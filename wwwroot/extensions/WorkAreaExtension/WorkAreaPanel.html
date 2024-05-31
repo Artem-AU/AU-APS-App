@@ -1,55 +1,105 @@
-<div class="container-fluid text-bg-light flex-grow-1">
-    <h5 class="pt-3">Define Property:</h5>
-    <form class="row g-3">
-        <div class="form-floating col">
-            <input type="text" class="form-control" id="zone" placeholder="Enter Zone">
-            <label for="zone" class="text-muted">Zone</label>
+<div class="container-fluid text-bg-light pb-2">
+    <div class="row">
+        <div class="col border-end" id="setUpPanel">
+            <!-- <div class="container-fluid text-bg-light flex-grow-1"> -->
+                <h5 class="pt-3">Define Property:</h5>
+                <form class="row g-3">
+                    <div class="form-floating col">
+                        <input type="text" class="form-control" id="zone" placeholder="Enter Zone">
+                        <label for="zone" class="text-muted">Zone</label>
+                    </div>
+                    <div class="form-floating col">
+                        <input type="text" class="form-control" id="subzone" placeholder="Enter Subzone">
+                        <label for="subzone" class="text-muted">Subzone</label>
+                      </div>
+                    <div class="form-floating col">
+                        <input type="text" class="form-control" id="workarea" placeholder="Enter WorkArea">
+                        <label for="workarea" class="text-muted">WorkArea</label>
+                    </div>
+                </form>
+                <h5 class="pt-3">Add WorkArea:</h5>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="modelSelectionSwitch" data-bs-toggle="tooltip" data-bs-placement="left" title="Turn ON and select model elements to define WorkArea">
+                    <label class="form-check-label" for="modelSelectionSwitch">Model Selection</label>
+                </div>
+                <div class="row input-group input-group-sm border justify-content-center mx-0 mt-2">
+                    <span class="col-4 input-group-text justify-content-center border-0">Hide in Viewer:</span>
+                    <div class="col">
+                        <div class="form-check form-control-sm form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="hideMappedSwitch" disabled autocomplete="off">
+                            <label class="form-check-label" for="hideMappedSwitch">Mapped Elements</label>
+                        </div>
+                        <div class="form-check form-control-sm form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="hideWorkAreasSwitch" disabled autocomplete="off">
+                            <label class="form-check-label" for="hideWorkAreasSwitch">WorkArea</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-group input-group-sm mt-2">
+                    <span class="input-group-text">Filter WorkArea by:</span>
+                    <select class="form-select" id="propertyDropdown" aria-label="Property Dropdown" data-bs-toggle="tooltip" data-bs-placement="top" title="Select Property Set for filtering WorkArea elements"></select>
+                    <select class="form-select w-100" multiple id="valueDropdown" aria-label="Value Dropdown" data-bs-toggle="tooltip" data-bs-placement="left" title="Select Values (single/multiple) for filtering Property Set"></select>
+                </div>
+                <div class="input-group input-group-sm mt-2">
+                    <button id="createWorkAreaButton" class="btn btn-primary" type="button" disabled>Create WorkArea</button>
+                    <input type="text" class="form-control" id="workAreaCodeInput" placeholder="Specify WorkArea Code..." aria-label="WorkArea Name" disabled readonly>
+                </div>
+                <h5 class="pt-3">Create Mapping:</h5>
+                <div class="input-group input-group-sm">
+                    <select class="form-select form-select-sm w-100" multiple id="mappingDropdown" aria-label="Mapping Name" data-bs-toggle="tooltip" data-bs-placement="left" title="Select Property Set (single/multiple) to include in mapping"></select>
+                    <button class="btn btn-primary ms-auto" id="downloadMappingButton" type="button" disabled>Download</button>
+                </div>
+                <h5 class="pt-3 visually-hidden">Create IFC:</h5>
+                <div class="input-group input-group-sm visually-hidden">
+                    <input type="text" class="form-control" placeholder="IFC Name" aria-label="IFC Name">
+                    <button class="btn btn-primary" id="createIfcButton" type="button" disabled>Download</button>
+                </div>
+            <!-- </div> -->
+            
         </div>
-        <div class="form-floating col">
-            <input type="text" class="form-control" id="subzone" placeholder="Enter Subzone">
-            <label for="subzone" class="text-muted">Subzone</label>
-          </div>
-        <div class="form-floating col">
-            <input type="text" class="form-control" id="workarea" placeholder="Enter WorkArea">
-            <label for="workarea" class="text-muted">WorkArea</label>
-        </div>
-    </form>
-    <h5 class="pt-3">Add WorkArea:</h5>
-    <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox" role="switch" id="modelSelectionSwitch" data-bs-toggle="tooltip" data-bs-placement="left" title="Turn ON and select model elements to define WorkArea">
-        <label class="form-check-label" for="modelSelectionSwitch">Model Selection</label>
-    </div>
-    <div class="row input-group input-group-sm border justify-content-center mx-0 mt-2">
-        <span class="col-4 input-group-text justify-content-center border-0">Hide in Viewer:</span>
         <div class="col">
-            <div class="form-check form-control-sm form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" id="hideMappedSwitch" disabled autocomplete="off">
-                <label class="form-check-label" for="hideMappedSwitch">Mapped Elements</label>
-            </div>
-            <div class="form-check form-control-sm form-switch">
-                <input class="form-check-input" type="checkbox" role="switch" id="hideWorkAreasSwitch" disabled autocomplete="off">
-                <label class="form-check-label" for="hideWorkAreasSwitch">WorkArea</label>
-            </div>
+
+            <div class="input-group input-group-sm" id="workAreasReportPanel">
+                <h5 class="pt-3">WorkAreas Report:</h5>
+                <div class="border border-radius rounded-3 w-100" id="report">
+                    <p>Report Here</p>
+                </div>
+                <div class="btn-group btn-group-sm ms-auto" role="group" aria-label="WorkArea Edit">
+                    <button type="button" class="btn btn-primary" id="reportEditButton" disabled>Edit</button>
+                    <button type="button" class="btn btn-danger" id="reportDeleteButton" disabled>Delete</button>
+                </div>
+            </div>            
+            
+            <!-- <form class="row g-3" id="editForm"> -->
+            <form class="row g-3 visually-hidden" id="editForm">
+
+                <h5 class="pt-3" id="editHeader">Edit WorkArea:</h5>
+                <div class="form-floating col-4 mt-0">
+                    <input type="text" class="form-control" id="zoneEdit" placeholder="Enter Zone">
+                    <label for="zone" class="text-muted">Zone</label>
+                </div>
+                <div class="form-floating col-4 mt-0">
+                    <input type="text" class="form-control" id="subzoneEdit" placeholder="Enter Subzone">
+                    <label for="subzone" class="text-muted">Subzone</label>
+                  </div>
+                <div class="form-floating col-4 mt-0">
+                    <input type="text" class="form-control" id="workareaEdit" placeholder="Enter WorkArea">
+                    <label for="workarea" class="text-muted">WorkArea</label>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <div class="btn-group btn-group-sm" role="group" aria-label="WorkArea Edit">
+                        <button type="submit" class="btn btn-primary" id="submitEdit">Edit</button>
+                        <button type="button" class="btn btn-secondary" id="cancelEdit">Cancel</button>
+                    </div>
+                </div>
+            </form>
+            <!-- <div class="input-group input-group-sm mt-auto" id="mappingInputGroup">
+                <h5 class="pt-3">Create Mapping:</h5>
+                <select class="form-select form-select-sm w-100" multiple id="mappingDropdown" aria-label="Mapping Name" data-bs-toggle="tooltip" data-bs-placement="left" title="Select Property Set (single/multiple) to include in mapping"></select>
+                <button class="btn btn-primary ms-auto" id="downloadMappingButton" type="button" disabled>Download</button>
+            </div> -->
+            
         </div>
     </div>
-    <div class="input-group input-group-sm mt-2">
-        <span class="input-group-text">Filter WorkArea by:</span>
-        <select class="form-select" id="propertyDropdown" aria-label="Property Dropdown" data-bs-toggle="tooltip" data-bs-placement="top" title="Select Property Set for filtering WorkArea elements"></select>
-        <select class="form-select w-100" multiple id="valueDropdown" aria-label="Value Dropdown" data-bs-toggle="tooltip" data-bs-placement="left" title="Select Values (single/multiple) for filtering Property Set"></select>
-    </div>
-    <div class="input-group input-group-sm mt-2">
-        <button id="createWorkAreaButton" class="btn btn-primary" type="button" disabled>Create WorkArea</button>
-        <input type="text" class="form-control" id="workAreaCodeInput" placeholder="Specify WorkArea Code..." aria-label="WorkArea Name" disabled readonly>
-    </div>
-    <h5 class="pt-3">Create Mapping:</h5>
-    <div class="input-group input-group-sm">
-        <select class="form-select form-select-sm w-100" multiple id="mappingDropdown" aria-label="Mapping Name" data-bs-toggle="tooltip" data-bs-placement="left" title="Select Property Set (single/multiple) to include in mapping"></select>
-        <button class="btn btn-primary ms-auto" id="downloadMappingButton" type="button" disabled>Download</button>
-    </div>
-    <h5 class="pt-3">Create IFC:</h5>
-    <div class="input-group input-group-sm">
-        <input type="text" class="form-control" placeholder="IFC Name" aria-label="IFC Name">
-        <button class="btn btn-primary" id="createIfcButton" type="button" disabled>Download</button>
-    </div>
-
 </div>
+
