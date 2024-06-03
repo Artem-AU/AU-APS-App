@@ -1,4 +1,4 @@
-export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
+export class SearchSetsPanel extends Autodesk.Viewing.UI.DockingPanel {
     constructor(extension, id, title, options) {
         super(extension.viewer.container, id, title, options);
         this.extension = extension;
@@ -17,7 +17,7 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.container.appendChild(this.closer);
 
         // Fetch the HTML file
-        fetch("/extensions/WorkAreaExtension/WorkAreaPanel.html")
+        fetch("/extensions/SearchSetsExtension/SearchSetsPanel.html")
             .then(response => response.text())
             .then(data => {
                 // Create a new div element
@@ -28,6 +28,11 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
                 this.container.appendChild(newDiv);
 
                 // Get UI elements
+                //loadedTasks
+                this.loadedTasks = document.querySelector('#loadedTasks');
+                this.loadedSearchSets = document.querySelector('#loadedSearchSets');
+                this.taskDropdown = document.querySelector('#taskDropdown');
+
                 this.setUpPanel = document.querySelector('#setUpPanel');
                 this.workAreasReportPanel = document.querySelector('#workAreasReportPanel');
                 this.zoneInput = document.querySelector('#zone');
@@ -58,6 +63,54 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
                     }
                 }));
 
+                // Add event listener to the tasks input
+                this.loadedTasks.addEventListener('change', (event) => {
+                    const file = event.target.files[0];
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const lines = event.target.result.split('\n');
+                        this.tasks = lines.slice(1).map(line => {
+                            const [, ActionName, ParentTaskId, TaskId, TaskCode, IsCreatedTask, Name, StartDateTime, FinishDateTime] = line.split('\t');
+                            return { ActionName, ParentTaskId, TaskId, TaskCode, IsCreatedTask, Name, StartDateTime, FinishDateTime };
+                        });
+
+                        // Clear the dropdown
+                        this.taskDropdown.innerHTML = '';
+
+                        // Populate the dropdown with task names
+                        this.tasks.forEach(task => {
+                            const option = document.createElement('option');
+                            option.value = task.TaskId;
+                            option.text = task.Name;
+                            this.taskDropdown.add(option);
+                        });
+                    };
+                    reader.readAsText(file);
+                });
+
+                // Add event listener to the search sets input
+                this.loadedSearchSets.addEventListener('change', (event) => {
+                    const file = event.target.files[0];
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const lines = event.target.result.split('\n');
+                        this.searchSets = lines.slice(1).map(line => {
+                            const [, ActionName, TaskId, TaskName, TaskCode, ModelName, BehaviourType, AnyOfTheseMode, SearchSetGroup, PropertyName, Operator, PropertyValue] = line.split('\t');
+                            return { ActionName, TaskId, TaskName, TaskCode, ModelName, BehaviourType, AnyOfTheseMode, SearchSetGroup, PropertyName, Operator, PropertyValue };
+                        });
+                        console.log(this.searchSets);
+                    };
+                    reader.readAsText(file);
+                });
+
+                this.taskDropdown.addEventListener('change', (event) => {
+                    this.selectedTaskId = event.target.value;
+                    console.log(`Selected task ID: ${this.selectedTaskId}`);
+                    this.taskToDbids();
+                });
+
+
+
             
                 // Add an 'input' event listener to each input field
                 [this.zoneInput, this.subzoneInput, this.workareaInput].forEach(input => {
@@ -78,7 +131,6 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
                         }
                     });
                 });
-
 
                 // Add an event listener for the change event
                 this.modelSelectionSwitch.addEventListener('change', () => {
@@ -198,16 +250,13 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
                     if (this.selectedRowData) {
                         // Find the mesh with the selected UUID
                         let meshToDelete = this.extension.bBoxMeshes.find(mesh => mesh.uuid === this.selectedRowData.MeshId);
-                        console.log(meshToDelete);
+
                         if (meshToDelete) {
                             // Filter out the mesh from the bBoxMeshes array
                             this.extension.bBoxMeshes = this.extension.bBoxMeshes.filter(mesh => mesh !== meshToDelete);
 
                             // Delete the row from the Tabulator table
                             this.table.deleteRow(this.selectedRowData.MeshId);
-
-                            // Unhide elements
-                            this.extension.viewer.show(meshToDelete.userData.filteredDbids, meshToDelete.userData.model);
 
                             this.redrawMeshes();
                         }
@@ -253,6 +302,74 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
             .catch((error) => {
                 console.error('Error:', error);
             });
+    }
+
+    taskToDbids() {
+        // Filter the searchSets array to get the search sets for the selected task
+        const selectedSearchSets = this.searchSets.filter(searchSet => searchSet.TaskId === this.selectedTaskId);
+
+        console.log(selectedSearchSets); // Log the selected search sets
+
+        // Initialize an empty Map
+        const pSetKeys = new Map();
+
+        // Iterate over the selectedSearchSets
+        for (const searchSet of selectedSearchSets) {
+            // Replace the dot in the PropertyName with a forward slash
+            const formattedPropertyName = searchSet.PropertyName.replace('.', '/');
+
+            // If the pSetKeys Map already has the formattedPropertyName as a key, push the PropertyValue to the existing array
+            if (pSetKeys.has(formattedPropertyName)) {
+                pSetKeys.get(formattedPropertyName).push(searchSet.PropertyValue);
+            } 
+            // If the pSetKeys Map does not have the formattedPropertyName as a key, add a new key-value pair with the formattedPropertyName and an array containing the PropertyValue
+            else {
+                pSetKeys.set(formattedPropertyName, [searchSet.PropertyValue]);
+            }
+        }
+
+        console.log("pSetKeys", pSetKeys);
+
+        console.log(this.extension.viewer.model);
+        console.log(this.extension.targetNodesMap);
+
+        // Get the first object from this.targetNodesMap
+        const firstTargetNodesMapObject = this.extension.targetNodesMap.values().next().value;
+
+        // Call getPropertySetAsync with the dbIds from the first object in this.targetNodesMap
+        this.extension.viewer.model.getPropertySetAsync(firstTargetNodesMapObject, {})
+            .then(propertySet => {
+                console.log("propertySet", propertySet); // Log the PropertySet
+
+                // Initialize an empty array to store the dbIds
+                const dbIds = [];
+
+                // Iterate over the keys in pSetKeys
+                for (const key of pSetKeys.keys()) {
+                    console.log("key", key); // Log the key
+
+                    // Iterate over the objects in propertySet
+                    for (const property of propertySet) {
+                        // Check if the key exists in the object
+                        if (property.hasOwnProperty(key)) {
+                            console.log("property[key]", property[key]); // Log the value for this key
+
+                            // Get the values for this key from pSetKeys and remove the \r character
+                            const values = pSetKeys.get(key).map(value => value.trim());
+
+                            // Check if the displayValue is in the values
+                            if (values.includes(property.displayValue)) {
+                                // If it is, add the dbId to the dbIds array
+                                dbIds.push(property.dbId);
+                            }
+                        }
+                    }
+                }
+
+                console.log("dbIds", dbIds); // Log the dbIds
+            });
+
+        return pSetKeys;
     }
 
     toggleEditWorkAreaFormVisibility() {
@@ -381,54 +498,6 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.extension.tempBboxMesh.userData.mappingOptions = Array.from(this.propertyDropdown.options).map(option => option.value);
     }
 
-    async loadFontAndCreateTextMesh(mesh) {
-        try {
-            const response = await fetch('/helvetiker_regular.typeface.json');
-            const data = await response.json();
-            THREE.FontUtils.loadFace(data);
-
-            var options = {
-                font: "helvetiker", // The font to use
-                weight: "normal", // The weight of the font
-                style: "normal", // The style of the font
-                size: 2, // The size of the text
-                height: 10, // The height of the text (for 3D text)
-                curveSegments: 12, // The number of curve segments to use
-            };
-
-            // Create the text string
-            var text = `${mesh.userData.pds.zone}_${mesh.userData.pds.subzone}_${mesh.userData.pds.workArea}`;
-
-            // Generate shapes from text
-            var shapes = THREE.FontUtils.generateShapes(text, options);
-
-            // Create a geometry from the shapes
-            var geometry = new THREE.ShapeGeometry(shapes);
-
-            var material = new THREE.MeshBasicMaterial({ color: 0xff0000, depthTest: false, depthWrite: false }); // Red color
-
-            // Create a mesh from the geometry
-            var textMesh = new THREE.Mesh(geometry, material);
-
-            // Get the bounding box of the mesh
-            var boundingBox = new THREE.Box3().setFromObject(mesh);
-
-            // Get the center of the bounding box
-            var center = boundingBox.getCenter(new THREE.Vector3());
-
-            // Position the text mesh at the center of the mesh
-            textMesh.position.copy(center);
-
-            // Move the text mesh to the top of the bounding box
-            textMesh.position.x = boundingBox.min.x;
-
-            // Add the text mesh to the overlay
-            this.extension.viewer.impl.addOverlay('perm-overlay', textMesh);
-        } catch (error) {
-            console.error('Error:', error);
-        }
-    }
-
     convertTempMeshToPermMesh() {
         // Add the tempBboxMesh to the bBoxMeshes array
         this.extension.bBoxMeshes.push(this.extension.tempBboxMesh);
@@ -446,8 +515,6 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
         // Add the tempBboxMesh and its edges to the permanent overlay
         this.extension.viewer.impl.addOverlay('perm-overlay', this.extension.tempBboxMesh);
         this.extension.viewer.impl.addOverlay('perm-overlay', edges);
-
-        this.loadFontAndCreateTextMesh(this.extension.tempBboxMesh);
     }
 
     redrawMeshes() {
@@ -462,8 +529,6 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
             // Add the mesh and its edges to the permanent overlay
             this.extension.viewer.impl.addOverlay('perm-overlay', mesh);
             this.extension.viewer.impl.addOverlay('perm-overlay', edges);
-            this.loadFontAndCreateTextMesh(mesh);
-
         }
     }
 

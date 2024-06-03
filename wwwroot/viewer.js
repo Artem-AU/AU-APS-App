@@ -7,11 +7,13 @@ import './extensions/ReconstructPropsExtension.js';
 import './extensions/SearchExtension.js';
 import './extensions/PolyCountExtension.js';
 import './extensions/BulkPropertiesExtension/BulkPropertiesExtension.js';
+import './extensions/SearchSetsExtension/SearchSetsExtension.js';
 import './extensions/WorkAreaExtension/WorkAreaExtension.js';
 import './extensions/SceneBuilderExtension.js';
 import './extensions/TestExtension.js';
 // import './extensions/IddPipelineExtension.js';
 import './extensions/QtyHistogramExtension.js';
+
 
 
 

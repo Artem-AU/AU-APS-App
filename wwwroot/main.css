@@ -1,8 +1,12 @@
+* {
+    font-family: ArtifaktElement;
+}
+
 body, html {
     margin: 0;
     padding: 0;
     height: 100vh;
-    font-family: ArtifaktElement;
+    /* font-family: ArtifaktElement; */
 }
 
 #titleBlock, #preview, #overlay {
@@ -55,7 +59,7 @@ body, html {
     height: 2em;
     margin: 0 0.5em;
     font-size: 1em;
-    font-family: ArtifaktElement;
+    /* font-family: ArtifaktElement; */
 }
 
 #titleBlock .title {
@@ -130,14 +134,14 @@ label {
 
 .googleTableHeader {
     color: black;
-    font-family: ArtifaktElement;
+    /* font-family: ArtifaktElement; */
     font-weight: bold;
     background-color: lightsalmon;
 }
 
 .googleTableRows {
     color: black;
-    font-family: ArtifaktElement;
+    /* font-family: ArtifaktElement; */
 }
 
 .google-visualization-controls-categoryfilter {
