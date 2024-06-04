@@ -35,7 +35,57 @@
         <input type="file" id="input" title="Input Label">        <!-- <input type="search" id="filter" placeholder="Search...">
         <button id="search">Search</button> -->
     </div>
-    <div id="preview"></div>
+    <div id="preview">
+        <div class="" id="offcanvasDiv">
+            <div class="position-absolute top-0 start-50 translate-middle-x z-3 m-2">
+                <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExtensions" aria-controls="offcanvasExtensions">
+                    Extensions
+                </button>
+            </div>
+              
+            <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasExtensions" aria-labelledby="offcanvasExampleLabel">
+                <div class="offcanvas-header">
+                    <h5 class="offcanvas-title" id="offcanvasExampleLabel">Extensions</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body">
+                    <div class="pb-3">
+                        This Panel loads extensions into the viewer.<br>
+                        Turn on required extension.<br>
+                        Multiple extensions allowed.
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="BulkPropertiesExtension">
+                        <label class="form-check-label" for="BulkPropertiesExtension">Bulk Properties</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="WorkAreaExtension">
+                        <label class="form-check-label" for="WorkAreaExtension">Work Area</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="PolyCountExtension">
+                        <label class="form-check-label" for="PolyCountExtension">Polygon Count</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="HistogramExtension">
+                        <label class="form-check-label" for="HistogramExtension">Histogram</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="QtyHistogramExtension">
+                        <label class="form-check-label" for="QtyHistogramExtension">Quantity Histogram</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="SearchSetsExtension">
+                        <label class="form-check-label" for="SearchSetsExtension">Search Sets Extension</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
     <!-- <div id="searchoverlay">
         <input type="search" id="filter" placeholder="Search...">
         <button id="search">Quick Search</button>

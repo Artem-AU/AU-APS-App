@@ -9,6 +9,37 @@ initViewer(document.getElementById('preview')).then(aggregatedView => {
     setupModelSelection(aggregatedView);
     // setupModelSelection(aggregatedView, urn);
     setupModelUpload(aggregatedView);
+
+    // Get the UI element
+    const uiElement = document.getElementById('BulkPropertiesExtension');
+    // console.log('---main.js uiElement:', uiElement);
+    // console.log('---main.js aggregatedView:', aggregatedView.viewer);
+
+    
+    // Get the parent element
+    const parentElement = document.querySelector('.offcanvas-body');
+
+
+    // Add an event listener to the parent element
+    parentElement.addEventListener('change', function(event) {
+        // Check if the target element is a checkbox
+        if (event.target.type === 'checkbox') {
+            // Get the Viewer3D instance from aggregatedView
+            const viewer3D = aggregatedView.viewer;
+
+            if (event.target.checked) {
+                // Load the extension when the checkbox is checked
+                viewer3D.loadExtension(event.target.id);
+            } else {
+                // Unload the extension when the checkbox is unchecked
+                viewer3D.unloadExtension(event.target.id);
+            }
+        }
+    });
+
+
+
+
 }).catch(error => {
     console.error('Failed to initialize aggregatedView:', error);
 });

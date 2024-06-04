@@ -10,7 +10,7 @@ class WorkAreaExtension extends BaseExtension {
     }
 
     async load() {
-        super.load();
+        await super.load();
         
         await Promise.all([
             this.loadScript('https://unpkg.com/tabulator-tables@6.2.1/dist/js/tabulator.min.js', 'Tabulator'),
@@ -21,6 +21,8 @@ class WorkAreaExtension extends BaseExtension {
 
         // Create a permanent overlay
         this.viewer.impl.createOverlayScene('perm-overlay');
+        this.dbIdToCOG = this.createDbIdToCOG();
+
 
         return true;
     }

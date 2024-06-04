@@ -84,13 +84,11 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
         const data = [header, ...dataRows];
 
         // Return the data
-        console.log("data", data);
         return data;
     }
 
     drawChart(prop) {
         const chartData = this.defineChartData(prop);
-        console.log("chartData", chartData);
 
         const dataTable = new google.visualization.DataTable();
 
@@ -122,8 +120,6 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
             isStacked: true
         };
 
-        console.log("dataTable", dataTable);
-
         const chart = new google.visualization.BarChart(this.chartDiv);
         chart.draw(dataTable, options);
 
@@ -132,11 +128,9 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
             const selectedItem = chart.getSelection()[0];
             if (selectedItem) {
                 const key = dataTable.getValue(selectedItem.row, 0); // 0 is the column index for the key
-                console.log('Selected key:', key);
 
                 // Get the value of the selected segment
                 const selectedValue = dataTable.getValue(selectedItem.row, selectedItem.column);
-                console.log('Selected value:', selectedValue);
 
                 let selectedDbids = []
 
@@ -144,10 +138,6 @@ export class HistogramPanel extends Autodesk.Viewing.UI.DockingPanel {
                 const selectedData = chartData.find(item => item[0] === key);
                 if (selectedData && selectedData.length > selectedItem.column) {
                     selectedDbids = selectedData[selectedItem.column];
-                    console.log('Selected Dbids:', selectedDbids);
-                    //log modelname
-                    console.log('Model Name:', firstItem[selectedItem.column]);
-                    // Do something with selectedDbids...
                 }
 
 

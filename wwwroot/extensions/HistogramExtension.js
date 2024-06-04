@@ -11,8 +11,13 @@ class HistogramExtension extends BaseExtension {
     }
 
     async load() {
-        super.load();
+        await super.load();
         console.log('HistogramExtension loaded.');
+
+        await this.createAggregatedData();
+        // this._panel.drawDropdown();
+
+
         return true;
     }
 
@@ -39,6 +44,7 @@ class HistogramExtension extends BaseExtension {
             this._panel.setVisible(!this._panel.isVisible());
             this._button.setState(this._panel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
             if (this._panel.isVisible()) {
+                this._panel.drawDropdown();
                 this._panel.drawChart(this._panel.select.value);
             }
         };

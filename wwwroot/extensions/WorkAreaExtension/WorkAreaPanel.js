@@ -198,7 +198,6 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
                     if (this.selectedRowData) {
                         // Find the mesh with the selected UUID
                         let meshToDelete = this.extension.bBoxMeshes.find(mesh => mesh.uuid === this.selectedRowData.MeshId);
-                        console.log(meshToDelete);
                         if (meshToDelete) {
                             // Filter out the mesh from the bBoxMeshes array
                             this.extension.bBoxMeshes = this.extension.bBoxMeshes.filter(mesh => mesh !== meshToDelete);
@@ -328,7 +327,6 @@ export class WorkAreaPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.convertTempMeshToPermMesh();
         this.updateMappingDropdown();
         this.hideModelElements(this.extension.tempBboxMesh);
-        console.log(this.extension.bBoxMeshes);
     }
 
     hideModelElements(mesh) {

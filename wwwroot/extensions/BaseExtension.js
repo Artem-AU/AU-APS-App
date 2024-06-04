@@ -16,7 +16,7 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
 
     }
 
-    load() {
+    async load() {
         this.viewer.addEventListener(Autodesk.Viewing.OBJECT_TREE_CREATED_EVENT, this._onObjectTreeCreated);
         this.viewer.addEventListener(Autodesk.Viewing.AGGREGATE_SELECTION_CHANGED_EVENT, this._onSelectionChanged);
         this.viewer.addEventListener(Autodesk.Viewing.ISOLATE_EVENT, this._onIsolationChanged);
@@ -27,6 +27,8 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
         this.viewer.addEventListener(Autodesk.Viewing.ESCAPE_EVENT, this._onEscape);
         this.viewer.addEventListener(Autodesk.Viewing.SHOW_EVENT, this._onShow);
         this.viewer.addEventListener(Autodesk.Viewing.SHOW_ALL_EVENT, this._onShowAll);
+
+        await this.setTargetNodesMapAllModels();    
 
         return true;
     }
@@ -47,8 +49,7 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
     }
     
     async onModelLoaded(model) {
-        const targetNodes = await this.findTargetNodes(model);
-        this.targetNodesMap.set(model, targetNodes); // Store targetNodes in the Map
+        await this.setTargetNodesMapSingleModel(model);
     }
 
     onModelUnloaded(model) {
@@ -146,6 +147,22 @@ export class BaseExtension extends Autodesk.Viewing.Extension {
                 return this.findIfcNodes(model);
             default:
                 return this.findNavisNodes(model);
+        }
+    }
+
+    async setTargetNodesMapSingleModel(model) {
+        const targetNodes = await this.findTargetNodes(model);
+        this.targetNodesMap.set(model, targetNodes); // Store targetNodes in the Map
+    }
+
+    async setTargetNodesMapAllModels() {
+        // Get all visible models
+        const models = this.viewer.getAllModels();
+
+        // Iterate over each model
+        for (const model of models) {
+            // Run your code for each model
+            await this.setTargetNodesMapSingleModel(model);
         }
     }
 

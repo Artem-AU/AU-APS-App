@@ -39,20 +39,21 @@ export function initViewer(container) {
                     extensions: [
                         'Autodesk.DocumentBrowser',
                         // "Autodesk.Viewing.SceneBuilder",   THIS CREATES ERRORS WITH BASE EXTENSION READING model. I ASSUME THE MULTIPLE MODELS CREATED, INVESTIGATE
-                        'Autodesk.Explode',
+                        // 'Autodesk.Explode',
                         'LoggerExtension',
                         // 'SummaryExtension',
-                        'HistogramExtension',
+                        // 'HistogramExtension',
                         // 'DataGridExtension',
                         // 'ReconstructPropsExtension',
-                        'BulkPropertiesExtension',
+                        // 'BulkPropertiesExtension',
                         // 'SearchExtension',
-                        'PolyCountExtension',
+                        // 'PolyCountExtension',
                         // 'TestExtension',
-                        'WorkAreaExtension',
+                        // 'WorkAreaExtension',
                         // "SceneBuilderExtension",
                         // 'IddPipelineExtension',
-                        'QtyHistogramExtension',
+                        // 'QtyHistogramExtension',
+                        // 'SearchSetsExtension'
                     ]
                 }
             };

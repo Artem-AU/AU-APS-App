@@ -306,35 +306,39 @@ export class SearchSetsPanel extends Autodesk.Viewing.UI.DockingPanel {
 
     taskToDbids() {
         // Filter the searchSets array to get the search sets for the selected task
-        const selectedSearchSets = this.searchSets.filter(searchSet => searchSet.TaskId === this.selectedTaskId);
+        const taskSearchSets = this.searchSets.filter(searchSet => searchSet.TaskId === this.selectedTaskId);
 
-        console.log(selectedSearchSets); // Log the selected search sets
+        console.log("taskSearchSets", taskSearchSets); // Log the selected search sets
 
         // Initialize an empty Map
-        const pSetKeys = new Map();
+        const taskLinks = new Map();
 
         // Iterate over the selectedSearchSets
-        for (const searchSet of selectedSearchSets) {
+        for (const searchSet of taskSearchSets) {
             // Replace the dot in the PropertyName with a forward slash
-            const formattedPropertyName = searchSet.PropertyName.replace('.', '/');
+            const pSet = searchSet.PropertyName.replace('.', '/');
+
+            // Remove the \r character from the PropertyValue
+            const propertyValue = searchSet.PropertyValue.replace(/\r$/, '');
 
             // If the pSetKeys Map already has the formattedPropertyName as a key, push the PropertyValue to the existing array
-            if (pSetKeys.has(formattedPropertyName)) {
-                pSetKeys.get(formattedPropertyName).push(searchSet.PropertyValue);
+            if (taskLinks.has(pSet)) {
+                taskLinks.get(pSet).push(propertyValue);
             } 
             // If the pSetKeys Map does not have the formattedPropertyName as a key, add a new key-value pair with the formattedPropertyName and an array containing the PropertyValue
             else {
-                pSetKeys.set(formattedPropertyName, [searchSet.PropertyValue]);
+                taskLinks.set(pSet, [propertyValue]);
             }
         }
 
-        console.log("pSetKeys", pSetKeys);
+        console.log("taskLinks", taskLinks);
 
         console.log(this.extension.viewer.model);
         console.log(this.extension.targetNodesMap);
 
         // Get the first object from this.targetNodesMap
         const firstTargetNodesMapObject = this.extension.targetNodesMap.values().next().value;
+        console.log("firstTargetNodesMapObject", firstTargetNodesMapObject); // Log the first object
 
         // Call getPropertySetAsync with the dbIds from the first object in this.targetNodesMap
         this.extension.viewer.model.getPropertySetAsync(firstTargetNodesMapObject, {})
@@ -344,23 +348,32 @@ export class SearchSetsPanel extends Autodesk.Viewing.UI.DockingPanel {
                 // Initialize an empty array to store the dbIds
                 const dbIds = [];
 
-                // Iterate over the keys in pSetKeys
-                for (const key of pSetKeys.keys()) {
-                    console.log("key", key); // Log the key
+                // Iterate over the keys in taskLinks
+                for (const key of taskLinks.keys()) {
+                    // console.log("key", key); // Log the key
 
-                    // Iterate over the objects in propertySet
-                    for (const property of propertySet) {
-                        // Check if the key exists in the object
-                        if (property.hasOwnProperty(key)) {
-                            console.log("property[key]", property[key]); // Log the value for this key
+                    // Iterate over the properties in propertySet.map
+                    for (const [key, properties] of Object.entries(propertySet.map)) {
+                        console.log("key, properties", key, properties); // Log the key
 
-                            // Get the values for this key from pSetKeys and remove the \r character
-                            const values = pSetKeys.get(key).map(value => value.trim());
+                        // Iterate over the properties array
+                        for (const property of properties) {
+                            // Check if the key exists in pSetKeys
+                            if (taskLinks.has(key)) {
+                                // console.log("property", property); // Log the property
 
-                            // Check if the displayValue is in the values
-                            if (values.includes(property.displayValue)) {
-                                // If it is, add the dbId to the dbIds array
-                                dbIds.push(property.dbId);
+                                // Get the values for this key from pSetKeys and remove the \r character
+                                const values = taskLinks.get(key).map(value => value.trim());
+
+                                // Check if the displayValue is in the values
+                                if (values.includes(property.displayValue)) {
+                                    // If it is, add the dbId to the dbIds array
+                                    dbIds.push(property.dbId);
+                                } else {
+                                    console.log("values does not include property.displayValue"); // Log that values does not include displayValue
+                                    // Check if the displayValue is in the values
+                                    console.log("values", property.displayValue, values); // Log the values
+                                }
                             }
                         }
                     }
@@ -369,7 +382,7 @@ export class SearchSetsPanel extends Autodesk.Viewing.UI.DockingPanel {
                 console.log("dbIds", dbIds); // Log the dbIds
             });
 
-        return pSetKeys;
+        return taskLinks;
     }
 
     toggleEditWorkAreaFormVisibility() {

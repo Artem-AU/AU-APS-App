@@ -7,12 +7,15 @@ class BulkPropertiesExtension extends BaseExtension {
     }
 
     async load() {
-        super.load();
+        await super.load();
         await Promise.all([
             this.loadScript('https://unpkg.com/tabulator-tables@4.9.3/dist/js/tabulator.min.js', 'Tabulator'),
             this.loadStylesheet('https://unpkg.com/tabulator-tables@4.9.3/dist/css/tabulator.min.css')
         ]);
         console.log('BulkPropsExtension loaded.');
+
+        await this.createAggregatedData();
+
         return true;
     }
 
@@ -84,9 +87,8 @@ class BulkPropertiesExtension extends BaseExtension {
             // Concatenate rows
             mergedData.rows = [...mergedData.rows, ...data.rows];
         });
-
         this.tableData = mergedData;
-    }
+   }
 
     async createData(model, targetNodes) {
         // Get the property set for the dbIds

@@ -10,7 +10,7 @@ class SearchSetsExtension extends BaseExtension {
     }
 
     async load() {
-        super.load();
+        await super.load();
         
         await Promise.all([
             this.loadScript('https://unpkg.com/tabulator-tables@6.2.1/dist/js/tabulator.min.js', 'Tabulator'),
@@ -21,6 +21,20 @@ class SearchSetsExtension extends BaseExtension {
 
         // Create a permanent overlay
         this.viewer.impl.createOverlayScene('perm-overlay');
+
+        console.log('targetNodesMap BEFORE:', this.targetNodesMap);
+
+
+        // // Iterate over the entries in the targetNodesMap
+        // for (const [model] of this.targetNodesMap.entries()) {
+        //     // Get all DB IDs for the current model
+        //     const allDbIds = await this.getAllDbIds(model);
+
+        //     // Replace each value array with allDbIds
+        //     this.targetNodesMap.set(model, allDbIds);
+        // }
+
+        // console.log('targetNodesMap AFTER:', this.targetNodesMap);
 
         return true;
     }
