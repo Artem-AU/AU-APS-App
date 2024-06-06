@@ -155,8 +155,8 @@ label {
 
 .bootstrap-contents-div {
     box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
+    /* display: flex;
+    flex-direction: column; */
     height: calc(100% - 50px);
 }
 

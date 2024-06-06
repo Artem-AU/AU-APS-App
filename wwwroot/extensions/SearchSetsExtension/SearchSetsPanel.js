@@ -31,6 +31,8 @@ export class SearchSetsPanel extends Autodesk.Viewing.UI.DockingPanel {
                 //loadedTasks
                 this.loadedTasks = document.querySelector('#loadedTasks');
                 this.loadedSearchSets = document.querySelector('#loadedSearchSets');
+                this.createdTasksSwitch = document.querySelector('#createdTasksSwitch');  
+                this.linkedTasksSwitch = document.querySelector('#linkedTasksSwitch');  
                 this.taskDropdown = document.querySelector('#taskDropdown');
 
                 this.setUpPanel = document.querySelector('#setUpPanel');
@@ -48,9 +50,9 @@ export class SearchSetsPanel extends Autodesk.Viewing.UI.DockingPanel {
                 this.mappingDropdown = document.querySelector('#mappingDropdown');
                 this.downloadMappingButton = document.querySelector('#downloadMappingButton');
                 this.createIfcButton = document.querySelector('#createIfcButton');
-                this.reportDiv = document.querySelector('#report');
-                this.reportEditButton = document.querySelector('#reportEditButton');
-                this.reportDeleteButton = document.querySelector('#reportDeleteButton');
+                this.linksReportDiv = document.querySelector('#linksReport');
+                this.linksReportEditButton = document.querySelector('#linksReportEditButton');
+                this.linksReportDeleteButton = document.querySelector('#linksReportDeleteButton');
                 this.editForm = document.querySelector('#editForm');
                 this.cancelEdit = document.querySelector('#cancelEdit');
 
@@ -69,21 +71,17 @@ export class SearchSetsPanel extends Autodesk.Viewing.UI.DockingPanel {
                     const reader = new FileReader();
                     reader.onload = (event) => {
                         const lines = event.target.result.split('\n');
-                        this.tasks = lines.slice(1).map(line => {
+                        this.importedTasks = lines.slice(1).map(line => {
                             const [, ActionName, ParentTaskId, TaskId, TaskCode, IsCreatedTask, Name, StartDateTime, FinishDateTime] = line.split('\t');
                             return { ActionName, ParentTaskId, TaskId, TaskCode, IsCreatedTask, Name, StartDateTime, FinishDateTime };
                         });
 
-                        // Clear the dropdown
-                        this.taskDropdown.innerHTML = '';
+                        // Populate the dropdown with all task names
+                        this.populateDropdown();
 
-                        // Populate the dropdown with task names
-                        this.tasks.forEach(task => {
-                            const option = document.createElement('option');
-                            option.value = task.TaskId;
-                            option.text = task.Name;
-                            this.taskDropdown.add(option);
-                        });
+                        // Enable the createdTasksSwitch
+                        this.createdTasksSwitch.disabled = false;
+                        this.linkedTasksSwitch.disabled = false;
                     };
                     reader.readAsText(file);
                 });
@@ -94,24 +92,38 @@ export class SearchSetsPanel extends Autodesk.Viewing.UI.DockingPanel {
                     const reader = new FileReader();
                     reader.onload = (event) => {
                         const lines = event.target.result.split('\n');
-                        this.searchSets = lines.slice(1).map(line => {
+                        this.importedSearchSets = lines.slice(1).map(line => {
                             const [, ActionName, TaskId, TaskName, TaskCode, ModelName, BehaviourType, AnyOfTheseMode, SearchSetGroup, PropertyName, Operator, PropertyValue] = line.split('\t');
                             return { ActionName, TaskId, TaskName, TaskCode, ModelName, BehaviourType, AnyOfTheseMode, SearchSetGroup, PropertyName, Operator, PropertyValue };
                         });
-                        console.log(this.searchSets);
+                        console.log(this.importedSearchSets);
                     };
                     reader.readAsText(file);
                 });
 
-                this.taskDropdown.addEventListener('change', (event) => {
-                    this.selectedTaskId = event.target.value;
-                    console.log(`Selected task ID: ${this.selectedTaskId}`);
-                    this.taskToDbids();
+                // Add event listener to the createdTasksSwitch
+                this.createdTasksSwitch.addEventListener('change', () => {
+                    // Populate the dropdown based on the current state of the switches
+                    this.populateDropdown();
                 });
 
+                //Add event listener to the linkedTasksSwitch
+                this.linkedTasksSwitch.addEventListener('change', () => {
+                    // Populate the dropdown based on the current state of the switches
+                    this.populateDropdown();
+                });
 
+                this.taskDropdown.addEventListener('change', (event) => {
+                    this.selectedTaskId = event.target.value;
+                    // console.log(`Selected task ID: ${this.selectedTaskId}`);
 
-            
+                    // Filter the searchSets array to get the search sets for the selected task
+                    this.selectedTaskSearchSets = this.importedSearchSets.filter(searchSet => searchSet.TaskId === this.selectedTaskId);
+
+                    this.taskToDbids();
+                    this.createTabulatorTableForTaskLinks(this.createSelectedTaskLinks());
+                });
+
                 // Add an 'input' event listener to each input field
                 [this.zoneInput, this.subzoneInput, this.workareaInput].forEach(input => {
                     input.addEventListener('input', () => {
@@ -242,11 +254,11 @@ export class SearchSetsPanel extends Autodesk.Viewing.UI.DockingPanel {
                     this.createIfc();
                 });
 
-                this.reportEditButton.addEventListener('click', () => {
+                this.linksReportEditButton.addEventListener('click', () => {
                     this.toggleEditWorkAreaFormVisibility();
                 });
 
-                this.reportDeleteButton.addEventListener('click', () => {
+                this.linksReportDeleteButton.addEventListener('click', () => {
                     if (this.selectedRowData) {
                         // Find the mesh with the selected UUID
                         let meshToDelete = this.extension.bBoxMeshes.find(mesh => mesh.uuid === this.selectedRowData.MeshId);
@@ -296,7 +308,7 @@ export class SearchSetsPanel extends Autodesk.Viewing.UI.DockingPanel {
                     this.toggleEditWorkAreaFormVisibility();
                 });
 
-                this.createTabulatorTable(this.extension.bBoxMeshes);
+                // this.createTabulatorTable(this.extension.bBoxMeshes);
 
             })
             .catch((error) => {
@@ -304,17 +316,38 @@ export class SearchSetsPanel extends Autodesk.Viewing.UI.DockingPanel {
             });
     }
 
-    taskToDbids() {
-        // Filter the searchSets array to get the search sets for the selected task
-        const taskSearchSets = this.searchSets.filter(searchSet => searchSet.TaskId === this.selectedTaskId);
+    // Helper function to populate the dropdown
+    populateDropdown() {
+        // Clear the dropdown
+        this.taskDropdown.innerHTML = '';
 
-        console.log("taskSearchSets", taskSearchSets); // Log the selected search sets
+        // Filter tasks based on the createdTasksSwitch
+        const tasks = this.createdTasksSwitch.checked 
+            ? this.importedTasks.filter(task => task.IsCreatedTask === 'True') 
+            : this.importedTasks;
 
+        // Populate the dropdown with task names
+        tasks.forEach(task => {
+            // If linkedTasksSwitch is on, only add tasks that are in importedSearchSets
+            if (this.linkedTasksSwitch.checked) {
+                const isTaskInSearchSets = this.importedSearchSets.some(searchSet => searchSet.TaskId === task.TaskId);
+                if (!isTaskInSearchSets) {
+                    return;
+                }
+            }
+            const option = document.createElement('option');
+            option.value = task.TaskId;
+            option.text = task.Name;
+            this.taskDropdown.add(option);
+        });
+    }
+
+    createSelectedTaskLinks() {
         // Initialize an empty Map
         const taskLinks = new Map();
 
         // Iterate over the selectedSearchSets
-        for (const searchSet of taskSearchSets) {
+        for (const searchSet of this.selectedTaskSearchSets) {
             // Replace the dot in the PropertyName with a forward slash
             const pSet = searchSet.PropertyName.replace('.', '/');
 
@@ -331,19 +364,30 @@ export class SearchSetsPanel extends Autodesk.Viewing.UI.DockingPanel {
             }
         }
 
+        return taskLinks;
+    }
+
+
+
+    taskToDbids() {
+        // console.log("taskSearchSets", taskSearchSets); // Log the selected search sets
+
+        // Initialize an empty Map
+        const taskLinks = this.createSelectedTaskLinks();
+
         console.log("taskLinks", taskLinks);
 
-        console.log(this.extension.viewer.model);
-        console.log(this.extension.targetNodesMap);
+        // console.log(this.extension.viewer.model);
+        // console.log(this.extension.targetNodesMap);
 
         // Get the first object from this.targetNodesMap
         const firstTargetNodesMapObject = this.extension.targetNodesMap.values().next().value;
-        console.log("firstTargetNodesMapObject", firstTargetNodesMapObject); // Log the first object
+        // console.log("firstTargetNodesMapObject", firstTargetNodesMapObject); // Log the first object
 
         // Call getPropertySetAsync with the dbIds from the first object in this.targetNodesMap
         this.extension.viewer.model.getPropertySetAsync(firstTargetNodesMapObject, {})
             .then(propertySet => {
-                console.log("propertySet", propertySet); // Log the PropertySet
+                // console.log("propertySet", propertySet); // Log the PropertySet
 
                 // Initialize an empty array to store the dbIds
                 const dbIds = [];
@@ -354,7 +398,7 @@ export class SearchSetsPanel extends Autodesk.Viewing.UI.DockingPanel {
 
                     // Iterate over the properties in propertySet.map
                     for (const [key, properties] of Object.entries(propertySet.map)) {
-                        console.log("key, properties", key, properties); // Log the key
+                        // console.log("key, properties", key, properties); // Log the key
 
                         // Iterate over the properties array
                         for (const property of properties) {
@@ -370,9 +414,9 @@ export class SearchSetsPanel extends Autodesk.Viewing.UI.DockingPanel {
                                     // If it is, add the dbId to the dbIds array
                                     dbIds.push(property.dbId);
                                 } else {
-                                    console.log("values does not include property.displayValue"); // Log that values does not include displayValue
+                                    // console.log("values does not include property.displayValue"); // Log that values does not include displayValue
                                     // Check if the displayValue is in the values
-                                    console.log("values", property.displayValue, values); // Log the values
+                                    // console.log("values", property.displayValue, values); // Log the values
                                 }
                             }
                         }
@@ -380,6 +424,25 @@ export class SearchSetsPanel extends Autodesk.Viewing.UI.DockingPanel {
                 }
 
                 console.log("dbIds", dbIds); // Log the dbIds
+
+                // If model is not null, create the selection definition and select the elements
+                const model = this.extension.viewer.model;
+                if (model) {
+                    // Create the selection definition
+                    let selectionDef = {
+                        model: model,
+                        ids: dbIds,
+                    };
+
+                    // Select the corresponding model elements in the viewer
+                    this.extension.viewer.setAggregateSelection([selectionDef], true);
+
+                    // Isolate and fit the view to the selected elements
+                    this.extension.viewer.isolate(dbIds, model);
+                    this.extension.viewer.fitToView(dbIds, model);
+                }
+
+
             });
 
         return taskLinks;
@@ -403,46 +466,51 @@ export class SearchSetsPanel extends Autodesk.Viewing.UI.DockingPanel {
         }
     }
 
-    bBoxToTabulatorData(bBoxMeshes) {
-        return bBoxMeshes.map(mesh => {
-            return {
-                MeshId: mesh.uuid,
-                Zone: mesh.userData.pds.zone,
-                Subzone: mesh.userData.pds.subzone,
-                WorkArea: mesh.userData.pds.workArea
-            };
-        });
+    taskLinksToTabulatorData(taskLinks) {
+        // Convert the Map to an array of [key, value] pairs
+        const entries = Array.from(taskLinks.entries());
+
+        // Map over the entries and convert each [key, value] pair into an object
+        return entries.map(([key, values]) => {
+            // Map over the values and convert each value into an object
+            return values.map(value => {
+                return {
+                    Key: key,
+                    Value: value
+                };
+            });
+        }).flat();  // Flatten the array of arrays into a single array
     }
 
-    createTabulatorTable(bBoxMeshes) {
+    createTabulatorTableForTaskLinks(taskLinks) {
         // Create data array
-        let data = this.bBoxToTabulatorData(bBoxMeshes);
-
+        let data = this.taskLinksToTabulatorData(taskLinks);
+    
         // Create Tabulator table
-        this.table = new Tabulator(this.reportDiv, {
-            index: "MeshId", // Use MeshId as the unique id for each row
-            layout: 'fitColumns',
+        this.table = new Tabulator(this.linksReportDiv, {
+            index: "Key", // Use Key as the unique id for each row
+            layout: 'fitData',
             selectableRows: 1,
             data: data,
+            // height: "100%", // Set the height of the table to 100%
             columns: [
-                {title: "Zone", field: "Zone"},
-                {title: "Subzone", field: "Subzone"},
-                {title: "WorkArea", field: "WorkArea"},
+                {title: "Property", field: "Key"},
+                {title: "Value", field: "Value"},
             ],
         });
-
-        // Add row selection event listener
-        this.table.on("rowSelected", (row) => {
-            this.selectedRowData = row.getData();
-            this.reportEditButton.disabled = false;
-            this.reportDeleteButton.disabled = false;
-        });
-
-        // Add row deselection event listener
-        this.table.on("rowDeselected", (row) => {
-            this.reportEditButton.disabled = true;
-            this.reportDeleteButton.disabled = true;
-        });
+    
+        // // Add row selection event listener
+        // this.table.on("rowSelected", (row) => {
+        //     this.selectedRowData = row.getData();
+        //     this.reportEditButton.disabled = false;
+        //     this.reportDeleteButton.disabled = false;
+        // });
+    
+        // // Add row deselection event listener
+        // this.table.on("rowDeselected", (row) => {
+        //     this.reportEditButton.disabled = true;
+        //     this.reportDeleteButton.disabled = true;
+        // });
     }
 
     async createWorkArea() {
@@ -458,7 +526,7 @@ export class SearchSetsPanel extends Autodesk.Viewing.UI.DockingPanel {
         this.convertTempMeshToPermMesh();
         this.updateMappingDropdown();
         this.hideModelElements(this.extension.tempBboxMesh);
-        console.log(this.extension.bBoxMeshes);
+        // console.log(this.extension.bBoxMeshes);
     }
 
     hideModelElements(mesh) {
