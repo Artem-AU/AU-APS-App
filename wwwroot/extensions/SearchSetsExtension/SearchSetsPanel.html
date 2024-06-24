@@ -2,38 +2,156 @@
 <div class="container-fluid text-bg-light pb-2 border h-100">
     <div class="row h-100">
         <div class="col-6 border-end h-100" id="setUpPanel">
-            <div id="loadTsvDiv">
-                <h5 class="pt-3">Load TBB TSV:</h5>
+            <div class="d-flex flex-column" id="loadTsvDiv">
+                <h5 class="mt-3 pe-2 d-flex rounded-top border border-2 border-bottom-0 border-primary-subtle me-auto"><i class="bi bi-repeat px-2"></i>Load TBB TSV</h5>
                 <div class="input-group input-group-sm pb-1">
-                    <label class="input-group-text text-bg-info ms-auto" for="loadedTasks">Tasks</label>
+                    <label class="input-group-text bg-info-subtle ms-auto" for="loadedTasks"><i class="bi bi-cloud-upload pe-2"></i>Tasks</label>
                     <input type="file" class="form-control" id="loadedTasks">
                 </div>
-                <div class="input-group input-group-sm">
-                    <label class="input-group-text text-bg-info ms-auto" for="loadedSearchSets">Searchsets</label>
+                <div class="input-group input-group-sm pb-1">
+                    <label class="input-group-text bg-info-subtle ms-auto" for="loadedSearchSets"><i class="bi bi-cloud-upload pe-2"></i> Searchsets</label>
                     <input type="file" class="form-control" id="loadedSearchSets">
                 </div>
+                <div id="modelMatchDiv" class="d-none display-n ">
+                    <button class="btn btn-sm btn-outline-primary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#modelSelect" aria-expanded="false" aria-controls="modelSelect">
+                        Viewer Model <i class="bi bi-link-45deg px-2"></i> Searchsets Model
+                    </button>
+                    <div class="collapse" id="modelSelect">
+                        <div class="input-group input-group-sm">
+                            <label class="input-group-text m-0" for="viewerModel">Viewer Model</label>
+                            <input type="text" class="form-control" disabled id="viewerModel" placeholder="" aria-label="Model Name">
+                        </div>
+                        <div class="input-group input-group-sm flex-nowrap w-100">
+                            <label class="input-group-text m-0" for="searchsetsModel">Searchsets Model</label>
+                            <select class="form-select" id="searchsetsModel"></select>
+                        </div>
+                    </div>
+                    <div class="form-check form-switch form-control-sm">
+                        <input class="form-check-input" type="checkbox" role="switch" id="hideLinkedSwitch" disabled>
+                        <label class="form-check-label m-0" for="hideLinkedSwitch"><i class="bi bi-eye-slash pe-2"></i>Hide Linked Model Elements</label>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm ms-auto my-1" id="downloadTsvButton" disabled><i class="bi bi-cloud-download"></i>  Download TSV</button>
             </div>
 
-            <div id="selectTaskDiv">
-                <h5 class="pt-3">Select Task:</h5>
+            <div id="selectTaskDiv" class="d-flex flex-column d-none">
+                <h5 class="mt-3 pe-2 d-flex rounded-top border border-2 border-bottom-0 border-primary-subtle me-auto"><i class="bi bi-cursor px-2"></i>Select Task</h5>
                 <div class="input-group input-group-sm">
-                    <label class="input-group-text m-0">Filter Tasks:</label>
-                    <div class="form-control">
+                    <label class="input-group-text m-0"><i class="bi bi-funnel"></i></label>
+                    <div class="form-control d-flex justify-content-around">
                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" role="switch" id="createdTasksSwitch" disabled data-bs-toggle="tooltip" data-bs-placement="left" title="Turn ON to show only tasks cteated by user in TBB. OFF will show all tasks">
-                            <label class="form-check-label" for="createdTasksSwitch">Created Tasks</label>
+                            <input class="form-check-input" type="checkbox" role="switch" id="createdTasksSwitch"  title="Turn ON to show only tasks cteated by user in TBB. OFF will show all tasks">
+                            <label class="form-check-label m-0" for="createdTasksSwitch">Created Tasks</label>
                         </div>
                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" role="switch" id="linkedTasksSwitch" disabled data-bs-toggle="tooltip" data-bs-placement="left" title="Turn ON to show only tasks cteated by user in TBB. OFF will show all tasks">
-                            <label class="form-check-label" for="linkedTasksSwitch">Linked Tasks</label>
+                            <input class="form-check-input" type="checkbox" role="switch" id="linkedTasksSwitch" disabled  title="Turn ON to show only tasks cteated by user in TBB. OFF will show all tasks">
+                            <label class="form-check-label m-0" for="linkedTasksSwitch">Linked Tasks</label>
                         </div>
                     </div>
                 </div>
-                <select class="form-select form-select-sm" id="taskDropdown" aria-label="Task Dropdown" data-bs-toggle="tooltip" data-bs-placement="top" title="Select Task"></select>
+                <select class="form-select form-select-sm" id="taskDropdown" aria-label="Task Dropdown"></select>
+            </div>
+
+            <div class="d-flex flex-column" id="createSubTaskDiv">
+                <h5 class="mt-3 pe-2 d-flex rounded-top border border-2 border-bottom-0 border-primary-subtle me-auto"><i class="bi bi-plus-circle px-2"></i>Create Task</h5>
+
+                <div class="input-group input-group-sm">
+                    <label class="input-group-text m-0">Type</label>
+                    <div class="form-control d-flex justify-content-around">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="newTaskTypeRadio" id="newTaskRadio" >
+                            <label class="form-check-label m-0" for="newTaskRadio">New Task</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="newTaskTypeRadio" id="subTaskRadio" disabled>
+                            <label class="form-check-label m-0" for="subTaskRadio">Sub Task</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-check form-switch form-control-sm d-none" id="linkSubtaskForm">
+                    <input class="form-check-input" type="checkbox" role="switch" id="linkSubtaskSwitch">
+                    <label class="form-check-label m-0" for="linkSubtaskSwitch">Link Model Elements to SubTask</label>
+                </div>
+
+                <div class="d-none grid gap-0 row-gap-3 " id="taskParametersDiv">
+                    <h6 class="mt-2">Task Parameters</h6>              
+                    <div class="input-group input-group-sm d-none" id="modelNameForm">
+                        <label class="input-group-text m-0">Model Name</label>
+                        <input type="text" class="form-control" id="modelNameInput" placeholder="" aria-label="Model Name">
+                    </div>
+
+                    <div class="input-group input-group-sm d-none" id="taskNameForm">
+                        <label class="input-group-text m-0">Task Name</label>
+                        <input type="text" class="form-control" id="taskNameInput" placeholder="" aria-label="Task Name" value="Default Task">
+                    </div>
+
+                    <div class="" id="taskStartFinshForm">
+                        <div class="input-group input-group-sm">
+                            <label class="input-group-text m-0">Start Date</label>
+                            <input type="date" class="form-control" id="taskStartInput" placeholder="" aria-label="Start DateTime">
+                        </div>
+    
+                        <div class="input-group input-group-sm">
+                            <label class="input-group-text m-0">Finish Date</label>
+                            <input type="date" class="form-control" id="taskFinishInput" placeholder="" aria-label="Finish DateTime">
+                        </div>
+                    </div>
+                    <div class="input-group input-group-sm" id="numberOfSubtasksForm">
+                        <label class="input-group-text m-0">Number Of Subtasks</label>
+                        <input type="number" class="form-control" id="numberOfSubtasksInput" placeholder="" aria-label="Number Of Subtasks" min="1" step="1">
+                    </div>
+
+                    
+
+                    <div id="subtaskParamsRadios" class="d-none">
+
+                        <div class="btn-group btn-group-sm d-flex " role="group" aria-label="Basic radio toggle button group">
+                            <input type="radio" class="btn-check" name="subtaskBehaviourRadio" id="constructionRadio" autocomplete="off" checked>
+                            <label class="btn btn-outline-primary m-0" for="constructionRadio">Construction</label>
+                        
+                            <input type="radio" class="btn-check" name="subtaskBehaviourRadio" id="demolitionRadio" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="demolitionRadio">Demolition</label>
+                        
+                            <input type="radio" class="btn-check" name="subtaskBehaviourRadio" id="temporaryRadio" autocomplete="off">
+                            <label class="btn btn-outline-primary" for="temporaryRadio">Temporary</label>
+                        </div>
+                        <div class="input-group input-group-sm visually-hidden">
+                            <label class="input-group-text m-0">Define Elements by</label>
+                            <div class="form-control">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="subtaskSelectionRadio" id="modelSelectionRadio" checked>
+                                    <label class="form-check-label m-0" for="modelSelectionRadio">Model Selection</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="subtaskSelectionRadio" id="boundingBoxRadio">
+                                    <label class="form-check-label m-0" for="boundingBoxRadio">Bounding Box</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group input-group-sm visually-hidden">
+                            <label class="input-group-text m-0">SubTask for</label>
+                            <div class="form-control">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="subtaskGroupRadio" id="eachRadio" checked>
+                                    <label class="form-check-label m-0" for="eachRadio">Each Element in Selection</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="subtaskGroupRadio" id="groupRadio">
+                                    <label class="form-check-label m-0" for="groupRadio">Group of Selected Elements</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div> 
+                </div>
+
+
+                               
+                
             </div>
                 
-            <h5 class="pt-3 visually-hidden">Define Property:</h5>
-            <form class="row g-3 visually-hidden">
+            <!-- <h5 class="pt-3 d-none">Define Property</h5>
+            <form class="row g-3 d-none">
                 <div class="form-floating col">
                     <input type="text" class="form-control" id="zone" placeholder="Enter Zone">
                     <label for="zone" class="text-muted">Zone</label>
@@ -47,65 +165,85 @@
                     <label for="workarea" class="text-muted">WorkArea</label>
                 </div>
             </form>
-            <h5 class="pt-3 visually-hidden">Add WorkArea:</h5>
-            <div class="form-check form-switch visually-hidden">
-                <input class="form-check-input" type="checkbox" role="switch" id="modelSelectionSwitch" data-bs-toggle="tooltip" data-bs-placement="left" title="Turn ON and select model elements to define WorkArea">
-                <label class="form-check-label" for="modelSelectionSwitch">Model Selection</label>
+            <h5 class="pt-3 d-none">Add WorkArea</h5>
+            <div class="form-check form-switch d-none">
+                <input class="form-check-input" type="checkbox" role="switch" id="modelSelectionSwitch">
+                <label class="form-check-label m-0" for="modelSelectionSwitch">Model Selection</label>
             </div>
-            <div class="row input-group input-group-sm border justify-content-center mx-0 mt-2 visually-hidden">
-                <span class="col-4 input-group-text justify-content-center border-0">Hide in Viewer:</span>
+            <div class="row input-group input-group-sm border justify-content-center mx-0 mt-2 d-none">
+                <span class="col-4 input-group-text justify-content-center border-0">Hide in Viewer</span>
                 <div class="col">
                     <div class="form-check form-control-sm form-switch">
                         <input class="form-check-input" type="checkbox" role="switch" id="hideMappedSwitch" disabled autocomplete="off">
-                        <label class="form-check-label" for="hideMappedSwitch">Mapped Elements</label>
+                        <label class="form-check-label m-0" for="hideMappedSwitch">Mapped Elements</label>
                     </div>
                     <div class="form-check form-control-sm form-switch">
                         <input class="form-check-input" type="checkbox" role="switch" id="hideWorkAreasSwitch" disabled autocomplete="off">
-                        <label class="form-check-label" for="hideWorkAreasSwitch">WorkArea</label>
+                        <label class="form-check-label m-0" for="hideWorkAreasSwitch">WorkArea</label>
                     </div>
                 </div>
             </div>
-            <div class="input-group input-group-sm mt-2 visually-hidden">
-                <span class="input-group-text">Filter WorkArea by:</span>
-                <select class="form-select" id="propertyDropdown" aria-label="Property Dropdown" data-bs-toggle="tooltip" data-bs-placement="top" title="Select Property Set for filtering WorkArea elements"></select>
-                <select class="form-select w-100" multiple id="valueDropdown" aria-label="Value Dropdown" data-bs-toggle="tooltip" data-bs-placement="left" title="Select Values (single/multiple) for filtering Property Set"></select>
+            <div class="input-group input-group-sm mt-2 d-none">
+                <span class="input-group-text">Filter WorkArea by</span>
+                <select class="form-select" id="propertyDropdown" aria-label="Property Dropdown"></select>
+                <select class="form-select w-100" multiple id="valueDropdown" aria-label="Value Dropdown"></select>
             </div>
-            <div class="input-group input-group-sm mt-2 visually-hidden">
+            <div class="input-group input-group-sm mt-2 d-none">
                 <button id="createWorkAreaButton" class="btn btn-primary" type="button" disabled>Create WorkArea</button>
                 <input type="text" class="form-control" id="workAreaCodeInput" placeholder="Specify WorkArea Code..." aria-label="WorkArea Name" disabled readonly>
             </div>
-            <h5 class="pt-3 visually-hidden">Create Mapping:</h5>
-            <div class="input-group input-group-sm visually-hidden">
-                <select class="form-select form-select-sm w-100" multiple id="mappingDropdown" aria-label="Mapping Name" data-bs-toggle="tooltip" data-bs-placement="left" title="Select Property Set (single/multiple) to include in mapping"></select>
+            <h5 class="pt-3 d-none">Create Mapping</h5>
+            <div class="input-group input-group-sm d-none">
+                <select class="form-select form-select-sm w-100" multiple id="mappingDropdown" aria-label="Mapping Name"></select>
                 <button class="btn btn-primary ms-auto" id="downloadMappingButton" type="button" disabled>Download</button>
             </div>
-            <h5 class="pt-3 visually-hidden">Create IFC:</h5>
-            <div class="input-group input-group-sm visually-hidden">
+            <h5 class="pt-3 d-none">Create IFC</h5>
+            <div class="input-group input-group-sm d-none">
                 <input type="text" class="form-control" placeholder="IFC Name" aria-label="IFC Name">
                 <button class="btn btn-primary" id="createIfcButton" type="button" disabled>Download</button>
-            </div>
+            </div> -->
         </div>
         <div class="col-6 h-100">
-            <div class="col h-100">
+            <div class="h-25 w-100 d-flex flex-column">
+                <h5 class="mt-3 pe-2 d-flex rounded-top border border-2 border-bottom-0 border-primary-subtle me-auto"><i class="bi bi-file-spreadsheet px-2"></i>Selected Task Links Report</h5>
+                <div class="flex-grow-1 overflow-auto border w-100" id="linksReport">
+                    <!-- Lorem ipsum dolor sit amet consectetur adipisicing elit. Maiores modi cumque, distinctio magnam voluptatibus culpa quo. Tempora iste iusto repellat nam earum? Ipsam doloribus distinctio alias itaque expedita voluptatibus adipisci eius aut, odio vel delectus quis? Sint, dolor eveniet eius praesentium eos delectus tenetur nemo voluptatibus ea saepe soluta nostrum consequuntur exercitationem eligendi a. Blanditiis quasi laboriosam non sint perferendis fugiat sequi assumenda, alias voluptatem accusamus officiis odit reprehenderit voluptas repellat? Consequuntur error, quo asperiores recusandae aut dolorum neque, similique, est vitae tenetur sed voluptatibus praesentium in assumenda quidem accusamus molestias dolore beatae repudiandae quibusdam incidunt adipisci rem! Reprehenderit, soluta. -->
+                </div>
+                <div class="btn-group btn-group-sm ms-auto py-1" role="group" aria-label="Links Edit">
+                    <button type="button" class="btn btn-primary" id="linksReportEditButton" disabled>Edit</button>
+                    <button type="button" class="btn btn-danger" id="linksReportDeleteButton" disabled>Delete</button>
+                </div>
+            </div>    
+
+            <div class="h-75 w-100 d-flex flex-column">
                 <div class="h-50 w-100 d-flex flex-column">
-                    <h5 class="pt-3">Selected Task Links Report:</h5>
-                    <div class="overflow-auto" id="linksReport">
+                    <h5 class="mt-3 pe-2 d-flex rounded-top border border-2 border-bottom-0 border-primary-subtle me-auto"><i class="bi bi-file-spreadsheet px-2"></i>Review</h5>
+                    <h6 class="">SubTasks</h6>
+                    <div class=" flex-grow-1 overflow-auto border w-100" id="tempSubTasksReport">
                         <!-- Lorem ipsum dolor sit amet consectetur adipisicing elit. Maiores modi cumque, distinctio magnam voluptatibus culpa quo. Tempora iste iusto repellat nam earum? Ipsam doloribus distinctio alias itaque expedita voluptatibus adipisci eius aut, odio vel delectus quis? Sint, dolor eveniet eius praesentium eos delectus tenetur nemo voluptatibus ea saepe soluta nostrum consequuntur exercitationem eligendi a. Blanditiis quasi laboriosam non sint perferendis fugiat sequi assumenda, alias voluptatem accusamus officiis odit reprehenderit voluptas repellat? Consequuntur error, quo asperiores recusandae aut dolorum neque, similique, est vitae tenetur sed voluptatibus praesentium in assumenda quidem accusamus molestias dolore beatae repudiandae quibusdam incidunt adipisci rem! Reprehenderit, soluta. -->
                     </div>
-                    <div class="btn-group btn-group-sm ms-auto py-1" role="group" aria-label="Links Edit">
-                        <button type="button" class="btn btn-primary" id="linksReportEditButton" disabled>Edit</button>
-                        <button type="button" class="btn btn-danger" id="linksReportDeleteButton" disabled>Delete</button>
+                </div>
+                <div class="h-50 w-100 d-flex flex-column">
+                    <h6 class="my-2">Links</h6>
+                    <div class="flex-grow-1 overflow-auto border" id="tempLinksReport">
+                        <!-- Lorem ipsum dolor sit amet consectetur adipisicing elit. Maiores modi cumque, distinctio magnam voluptatibus culpa quo. Tempora iste iusto repellat nam earum? Ipsam doloribus distinctio alias itaque expedita voluptatibus adipisci eius aut, odio vel delectus quis? Sint, dolor eveniet eius praesentium eos delectus tenetur nemo voluptatibus ea saepe soluta nostrum consequuntur exercitationem eligendi a. Blanditiis quasi laboriosam non sint perferendis fugiat sequi assumenda, alias voluptatem accusamus officiis odit reprehenderit voluptas repellat? Consequuntur error, quo asperiores recusandae aut dolorum neque, similique, est vitae tenetur sed voluptatibus praesentium in assumenda quidem accusamus molestias dolore beatae repudiandae quibusdam incidunt adipisci rem! Reprehenderit, soluta. -->
+                    </div>
+                    <div class="btn-group btn-group-sm ms-auto py-1" role="group" aria-label="SubTasks Review">
+                        <button type="button" class="btn btn-primary" id="addSubTasksButton" disabled><i class="bi bi-database-add pe-2"></i>Add</button>
                     </div>
                 </div>
-    
-            </div>
+                
+            </div> 
+
+
+                   
             
 
             
             <!-- <form class="row g-3" id="editForm"> -->
-            <form class="row g-3 visually-hidden" id="editForm">
+            <form class="row g-3 d-none" id="editForm">
 
-                <h5 class="pt-3" id="editHeader">Edit WorkArea:</h5>
+                <h5 class="mt-3 pe-2 d-flex rounded-top border border-2 border-bottom-0 border-primary-subtle me-auto" id="editHeader">Edit WorkArea</h5>
                 <div class="form-floating col-4 mt-0">
                     <input type="text" class="form-control" id="zoneEdit" placeholder="Enter Zone">
                     <label for="zone" class="text-muted">Zone</label>
@@ -129,7 +267,5 @@
         </div>
     </div>
 </div>
-
-
 
 

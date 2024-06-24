@@ -73,8 +73,7 @@ body, html {
 } 
 
 /* .select2-container {
-    height: 30px !important;
-    padding: auto !important;
+    flex: 1 1 auto;
 } */
 
 .select2-selection--multiple {
@@ -164,3 +163,8 @@ label {
     box-sizing: border-box;
 }
 
+.select2-results__option {
+    font-size: 14px; /* Adjust font size as needed */
+    padding-top: 3px; /* Adjust top padding as needed */
+    padding-bottom: 3px; /* Adjust bottom padding as needed */
+}

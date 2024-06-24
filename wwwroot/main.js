@@ -2,7 +2,24 @@ import { initViewer, loadModel } from './viewer.js';
 
 initViewer(document.getElementById('preview')).then(aggregatedView => {
     // console.log(LMV_VIEWER_VERSION); // Logs the value of LMV_VIEWER_VERSION to the console
+   
+   
+    // const urn = "dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6YXVfdW5pcXVlX2J1Y2tldC9NSCUyMEVhcnRoJTIwYmxvY2tzJTIwZm9yJTIwRHdhbGxzJTIwLS02MDgwMDAubndk";
+    // // Load the model with the hardcoded URN
+    // loadModel(aggregatedView, urn).then(bubble => {
+    //     console.log('Model loaded successfully', bubble);
+    //     // Assuming aggregatedView has a method setNodes to set the current nodes
+    //     aggregatedView.setNodes([bubble]).then(() => {
+    //         console.log('Nodes set successfully');
+    //         // Proceed with any further operations after setting the nodes
+    //     }).catch(error => {
+    //         console.error('Failed to set nodes:', error);
+    //     });
+    // }).catch(error => {
+    //     console.error('Failed to load model:', error);
+    // });
 
+    
 
     aggregatedView.setNodes([]);
 

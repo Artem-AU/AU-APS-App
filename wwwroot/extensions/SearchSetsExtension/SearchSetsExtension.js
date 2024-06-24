@@ -1,6 +1,7 @@
 import { BaseExtension } from '../BaseExtension.js';
 import { SearchSetsPanel } from './SearchSetsPanel.js';
 
+
 class SearchSetsExtension extends BaseExtension {
     constructor(viewer, options) {
         super(viewer, options);
@@ -14,28 +15,13 @@ class SearchSetsExtension extends BaseExtension {
         
         await Promise.all([
             this.loadScript('https://unpkg.com/tabulator-tables@6.2.1/dist/js/tabulator.min.js', 'Tabulator'),
-            this.loadStylesheet('https://unpkg.com/tabulator-tables@6.2.1/dist/css/tabulator.min.css')
+            this.loadStylesheet('https://unpkg.com/tabulator-tables@6.2.1/dist/css/tabulator.min.css'),
         ]);
 
         console.log('SearchSetsExtension loaded.');
 
         // Create a permanent overlay
         this.viewer.impl.createOverlayScene('perm-overlay');
-
-        console.log('targetNodesMap BEFORE:', this.targetNodesMap);
-
-
-        // // Iterate over the entries in the targetNodesMap
-        // for (const [model] of this.targetNodesMap.entries()) {
-        //     // Get all DB IDs for the current model
-        //     const allDbIds = await this.getAllDbIds(model);
-
-        //     // Replace each value array with allDbIds
-        //     this.targetNodesMap.set(model, allDbIds);
-        // }
-
-        // console.log('targetNodesMap AFTER:', this.targetNodesMap);
-
         return true;
     }
 
@@ -76,6 +62,8 @@ class SearchSetsExtension extends BaseExtension {
         
         this.dbIdToCOG = this.createDbIdToCOG();
 
+        // this._panel.setVisible(true);
+
         // this.createBoxesFromLevels(model.myData.bbox, this.viewer.getExtension('Autodesk.AEC.LevelsExtension'))
     }
 
@@ -83,98 +71,168 @@ class SearchSetsExtension extends BaseExtension {
         super.onModelUnloaded(model);
     }
 
-    onSelectionChanged(model, dbids) {
+    async onSelectionChanged(model, dbids) {
         super.onSelectionChanged(model, dbids);
         const aggregateSelection = this.viewer.getAggregateSelection();
 
-        // Check if aggregateSelection[0] is defined
-        if (aggregateSelection[0]) {
-        
-            // Create a constant for the selected model
-            this.selectedModel = aggregateSelection[0].model;
+        if (aggregateSelection.length > 0 && this._panel.linkSubtaskSwitch.is(':checked')) {
+            const model = aggregateSelection[0].model;
+            const dbIds = aggregateSelection[0].selection;
 
-            if (this._panel.modelSelectionSwitch.checked) {
+            this.tempSubTasks = this.generateTempSubTasks(dbIds);
+            const selectionGuids = await this.fetchSelectionGuids(model, dbIds);
+            this.tempLinks = this.generateTempLinks(dbIds, this.tempSubTasks, selectionGuids);
 
-                this.createBboxFromFragments();
-
-                const workAreaToDbIds = this.createWorkAreaToDbIds();
-
-                // Extract dbids array
-                this.workAreaDbIds = workAreaToDbIds.undefined;
-
-                // Get property set for the dbids
-                this.selectedModel.getPropertySetAsync(this.workAreaDbIds, { ignoreHidden: true })
-                    .then(propertySet => {
-                        // Get the select elements
-                        let valueDropdown = document.getElementById('valueDropdown');
-
-                        // Get the keys from the property set map
-                        let keys = Object.keys(propertySet.map);
-
-                        // Filter out keys that start with "_"
-                        let filteredKeys = keys.filter(key => !key.startsWith('_'));
-
-                        // Create a new option element for each key
-                        filteredKeys.forEach((key, index) => {
-                            let option = document.createElement('option');
-                            option.value = key;
-                            option.text = key;
-                            // Set the first option as selected
-                            if (index === 0) {
-                                option.selected = true;
-                            }
-                            this._panel.propertyDropdown.appendChild(option);
-                        });
-
-                        // Add an event listener to the property dropdown
-                        this._panel.propertyDropdown.addEventListener('change', function() {
-                            // Clear the value dropdown
-                            valueDropdown.innerHTML = '';
-
-                            // Get the selected key
-                            let selectedKey = this.value;
-
-                            // Get the values for the selected key
-                            let values = propertySet.map[selectedKey];
-
-                            // Remove duplicates by converting to a Set and back to an Array
-                            let uniqueValues = Array.from(new Set(values.map(value => value.displayValue)));
-
-                            // Create a new option element for each unique value
-                            uniqueValues.forEach((displayValue, index) => {
-                                let option = document.createElement('option');
-                                option.value = displayValue;
-                                option.text = displayValue;
-                                // Set the first option as selected
-                                if (index === 0) {
-                                    option.selected = true;
-                                }
-                                valueDropdown.appendChild(option);
-                            });
-
-
-                            // // Initialize Select2 on the value dropdown
-                            // $(valueDropdown).select2().trigger('change');
-
-                        });
-
-                        // Trigger the 'change' event of the propertyDropdown
-                        this._panel.propertyDropdown.dispatchEvent(new Event('change'));
-
-                        // Trigger the 'change' event of the propertyDropdown
-                        valueDropdown.dispatchEvent(new Event('change'));
-
-
-                    });
-            }
+            this._panel.createTabulatorTableForTempSubTasks(this.tempSubTasks);
+            this._panel.createTabulatorTableForTempLinks(this.tempLinks);
+            // this._panel.addSubTasksButton.prop('disabled', false);
         }
-    }
+    }   
 
     onShowAll(ev) {
         // Handle show all event
         if (this.bBoxMeshes && this.bBoxMeshes.length > 0) {
             this._panel.hideMappedSwitch.checked = false;
         }
+    }
+
+    generateTempSubTasks(dbIds) {
+        const DateTime = luxon.DateTime;
+        const dateFormat = "d/MM/yyyy h:mm a";
+
+        // Calculate parentStart, parentFinish, and subtaskDuration
+        const parentStart = DateTime.fromFormat(this._panel.selectedTaskStart, dateFormat);
+        const parentFinish = DateTime.fromFormat(this._panel.selectedTaskFinish, dateFormat);
+        const totalDuration = parentFinish - parentStart;
+        const subtaskDuration = totalDuration / dbIds.length;
+
+        const tempSubTasks = [];
+        const tempTaskIds = [];
+        let newTaskId = 1;
+        let index = 1;
+
+        for (const dbid of dbIds) {
+            let parentTaskId, tempTaskName, tempTaskStart, tempTaskFinish, formattedStart, formattedFinish; // Declare variables outside the if-else block
+            if (this._panel.newTaskType === "sub") {
+                parentTaskId = this._panel.selectedTaskId.toString();
+                tempTaskName = `${this._panel.selectedTaskName}_${this._panel.behaviourType}_SubTask_${index}`;
+                tempTaskStart = new Date(parentStart.toJSDate().getTime() + subtaskDuration * (index - 1));
+                tempTaskFinish = new Date(tempTaskStart.getTime() + subtaskDuration);
+                formattedStart = DateTime.fromJSDate(tempTaskStart).toFormat(dateFormat);
+                formattedFinish = DateTime.fromJSDate(tempTaskFinish).toFormat(dateFormat);
+            } else {
+                parentTaskId = "-1";
+                tempTaskName = this._panel.taskNameInput.val();
+                tempTaskStart = this._panel.taskStartInput.val();
+                tempTaskFinish = this._panel.taskFinishInput.val();
+                formattedStart = DateTime.fromISO(tempTaskStart).toFormat(dateFormat);
+                formattedFinish = DateTime.fromISO(tempTaskFinish).toFormat(dateFormat);
+            }
+
+            console.log("check tempTaskName:", tempTaskName);
+            console.log("check tempTaskStart:", tempTaskStart);
+            console.log("check tempTaskFinish:", tempTaskFinish);
+
+            for (let i = 1; i <= this._panel.maxTaskId + 1; i++) {
+                if (!this._panel.taskIds.includes(i) && !tempTaskIds.includes(i)) {
+                    newTaskId = i;
+                    tempTaskIds.push(newTaskId);
+                    break;
+                }
+            }
+
+
+
+            console.log("check formattedStart:", formattedStart);
+            console.log("check formattedFinish:", formattedFinish);
+
+            let newTask = this.createTempSubTask("Create", parentTaskId, newTaskId.toString(), "", "True", tempTaskName, formattedStart, formattedFinish);
+            tempSubTasks.push(newTask);
+
+            index++;
+        }
+
+        return tempSubTasks;
+    }
+
+    // Step 1: Extract the logic into a new function
+    async fetchSelectionGuids(model, dbIds) {
+        const selectionGuids = new Map();
+        const options = {
+            categoryFilter: ["Item"],
+            propFilter: ["GUID"],
+            ignoreHidden: true, // Assuming you want to ignore hidden properties
+            needsExternalId: false // Set to true only if you need externalIds
+        };
+
+        await new Promise((resolve, reject) => {
+            const onSuccessCallback = (data) => {
+                data.forEach((item) => {
+                    if (item.properties) {
+                        item.properties.forEach((prop) => {
+                            if (prop.displayName === "GUID") {
+                                selectionGuids.set(item.dbId, prop.displayValue);
+                            }
+                        });
+                    }
+                });
+                resolve();
+            };
+
+            const onErrorCallback = (error) => {
+                console.error("Error fetching properties:", error);
+                reject(error);
+            };
+
+            model.getBulkProperties2(dbIds, options, onSuccessCallback, onErrorCallback);
+        });
+
+        return selectionGuids;
+    }
+
+    generateTempLinks(dbIds, tempSubTasks, selectionGuids) {
+        const tempLinks = [];
+
+        tempSubTasks.forEach((task, idx) => {
+            const dbid = dbIds[idx];
+            const guidValue = selectionGuids.get(dbid) || "000"; // Default GUID if not found
+
+            let newLink = this.createTempLink("Create", task.TaskId.toString(), task.Name, "", this._panel.modelNameInput.val(), this._panel.behaviourType, "Or", "AllOfThese", "Item.GUID", "Equals", guidValue);
+            tempLinks.push(newLink);
+        });
+
+        return tempLinks;
+    }
+
+    // Step 2: Define the Structure for a Task Object
+    // This function creates a new task object based on the provided parameters
+    createTempSubTask(actionName, parentTaskId, taskId, taskCode, isCreatedTask, name, startDateTime, finishDateTime) {
+        return {
+            ActionName: actionName,
+            ParentTaskId: parentTaskId,
+            TaskId: taskId,
+            TaskCode: taskCode,
+            IsCreatedTask: isCreatedTask,
+            Name: name,
+            StartDateTime: startDateTime,
+            FinishDateTime: finishDateTime
+        };
+    }   
+
+    createTempLink(actionName, taskId, taskName, taskCode, modelName, behaviourType, anyOfTheseMode, searchSetGroup, propertyName, operator, propertyValue) {
+        return {
+            ActionName: actionName,
+            TaskId: taskId,
+            TaskName: taskName,
+            TaskCode: taskCode,
+            ModelName: modelName,
+            BehaviourType: behaviourType,
+            AnyOfTheseMode: anyOfTheseMode,
+            SearchSetGroup: searchSetGroup,
+            PropertyName: propertyName,
+            Operator: operator,
+            PropertyValue: propertyValue
+        };
     }
 
     createBboxFromFragments() {

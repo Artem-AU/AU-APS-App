@@ -20,7 +20,18 @@ class LoggerExtension extends BaseExtension {
     async onModelLoaded(model) {
         await super.onModelLoaded(model);
         console.log('---LoggerExtension.js onModelLoaded targetNodesMap:', this.targetNodesMap);
+        console.log('---LoggerExtension.js onModelLoaded model:', model);
+        // const doc = model.getDocumentNode().getDocument()
+        // console.log('---LoggerExtension.js onModelLoaded doc:', doc);
 
+        // // Assuming [`doc`](command:_github.copilot.openSymbolFromReferences?%5B%7B%22%24mid%22%3A1%2C%22fsPath%22%3A%22c%3A%5C%5CUsers%5C%5Caruzdyak%5C%5COneDrive%20-%20CPB%20Contractors%20Pty%20LTD%5C%5CAU_Apps%5C%5CAU-APS-App%5C%5Cwwwroot%5C%5Cextensions%5C%5CLoggerExtension.js%22%2C%22_sep%22%3A1%2C%22external%22%3A%22file%3A%2F%2F%2Fc%253A%2FUsers%2Faruzdyak%2FOneDrive%2520-%2520CPB%2520Contractors%2520Pty%2520LTD%2FAU_Apps%2FAU-APS-App%2Fwwwroot%2Fextensions%2FLoggerExtension.js%22%2C%22path%22%3A%22%2Fc%3A%2FUsers%2Faruzdyak%2FOneDrive%20-%20CPB%20Contractors%20Pty%20LTD%2FAU_Apps%2FAU-APS-App%2Fwwwroot%2Fextensions%2FLoggerExtension.js%22%2C%22scheme%22%3A%22file%22%7D%2C%7B%22line%22%3A23%2C%22character%22%3A8%7D%5D "wwwroot/extensions/LoggerExtension.js") is an instance of Document
+        // doc.downloadAecModelData()
+        //     .then(data => {
+        //         console.log('AEC Model Data:', data);
+        //     })
+        //     .catch(error => {
+        //         console.error('Error downloading AEC Model Data:', error);
+        //     });
 
         // console.log(THREE); // Logs the version of THREE.js
         // console.log(THREE.REVISION); // Logs the version of THREE.js

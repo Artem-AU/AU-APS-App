@@ -94,7 +94,7 @@ class WorkAreaExtension extends BaseExtension {
                 this.selectedModel.getPropertySetAsync(this.workAreaDbIds, { ignoreHidden: true })
                     .then(propertySet => {
                         // Get the select elements
-                        let valueDropdown = document.getElementById('valueDropdown');
+                        let valueDropdown = document.querySelector('#valueDropdown');
 
                         // Get the keys from the property set map
                         let keys = Object.keys(propertySet.map);

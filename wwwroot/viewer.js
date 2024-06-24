@@ -13,6 +13,7 @@ import './extensions/SceneBuilderExtension.js';
 import './extensions/TestExtension.js';
 // import './extensions/IddPipelineExtension.js';
 import './extensions/QtyHistogramExtension.js';
+import './extensions/geo-three.js'
 
 
 
@@ -53,7 +54,8 @@ export function initViewer(container) {
                         // "SceneBuilderExtension",
                         // 'IddPipelineExtension',
                         // 'QtyHistogramExtension',
-                        // 'SearchSetsExtension'
+                        // 'SearchSetsExtension',
+                        // 'MapsExtension',
                     ]
                 }
             };
@@ -75,7 +77,11 @@ export function loadModel(aggregatedView, urn) {
     return new Promise(function (resolve, reject) {
         function onDocumentLoadSuccess(doc) {
             doc.downloadAecModelData(() => {
-                const bubbles = doc.getRoot().search({type:'geometry', role: '3d'});
+
+                const bubbles = doc.getRoot().search({type:'geometry'});
+
+                // const bubbles = doc.getRoot().search({type:'geometry', role: '3d'});
+
                 const bubble = bubbles[0];
                 if (!bubble) {
                     reject(new Error('No 3D geometry found in document'));
