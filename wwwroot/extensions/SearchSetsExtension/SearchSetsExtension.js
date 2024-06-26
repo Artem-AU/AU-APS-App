@@ -51,9 +51,9 @@ class SearchSetsExtension extends BaseExtension {
         this._button.onClick = async () => {
             this._panel.setVisible(!this._panel.isVisible());
             this._button.setState(this._panel.isVisible() ? Autodesk.Viewing.UI.Button.State.ACTIVE : Autodesk.Viewing.UI.Button.State.INACTIVE);
-            // if (this._panel.isVisible()) {
+            if (this._panel.isVisible()) {
 
-            // }
+            }
         };
     }
 
@@ -101,9 +101,9 @@ class SearchSetsExtension extends BaseExtension {
         const dateFormat = "d/MM/yyyy h:mm a";
 
         // Calculate parentStart, parentFinish, and subtaskDuration
-        const parentStart = DateTime.fromFormat(this._panel.selectedTaskStart, dateFormat);
-        const parentFinish = DateTime.fromFormat(this._panel.selectedTaskFinish, dateFormat);
-        const totalDuration = parentFinish - parentStart;
+        const parentStart = DateTime.fromFormat(this._panel.selectedTaskStart.trim(), dateFormat);
+        const parentFinish = DateTime.fromFormat(this._panel.selectedTaskFinish.trim(), dateFormat);
+        const totalDuration = parentFinish.diff(parentStart).as('milliseconds'); // Calculate total duration in milliseconds
         const subtaskDuration = totalDuration / dbIds.length;
 
         const tempSubTasks = [];
@@ -129,9 +129,13 @@ class SearchSetsExtension extends BaseExtension {
                 formattedFinish = DateTime.fromISO(tempTaskFinish).toFormat(dateFormat);
             }
 
-            console.log("check tempTaskName:", tempTaskName);
-            console.log("check tempTaskStart:", tempTaskStart);
-            console.log("check tempTaskFinish:", tempTaskFinish);
+            // console.log("check tempTaskName:", tempTaskName);
+            // console.log("check parentStart:", parentStart);
+            // console.log("check parentFinish:", parentFinish);
+            // console.log("check totalDuration:", totalDuration);
+            // console.log("check subtaskDuration:", subtaskDuration);
+            // console.log("check tempTaskStart:", tempTaskStart);
+            // console.log("check tempTaskFinish:", tempTaskFinish);
 
             for (let i = 1; i <= this._panel.maxTaskId + 1; i++) {
                 if (!this._panel.taskIds.includes(i) && !tempTaskIds.includes(i)) {
@@ -143,8 +147,8 @@ class SearchSetsExtension extends BaseExtension {
 
 
 
-            console.log("check formattedStart:", formattedStart);
-            console.log("check formattedFinish:", formattedFinish);
+            // console.log("check formattedStart:", formattedStart);
+            // console.log("check formattedFinish:", formattedFinish);
 
             let newTask = this.createTempSubTask("Create", parentTaskId, newTaskId.toString(), "", "True", tempTaskName, formattedStart, formattedFinish);
             tempSubTasks.push(newTask);
